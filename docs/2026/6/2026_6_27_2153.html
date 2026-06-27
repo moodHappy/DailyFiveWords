@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Daily Five Words | 2026-06-27</title>
+    <style>
+        :root { --bg: #f5f5f7; --card: #ffffff; --text: #1d1d1f; --muted: #86868b; --accent: #0066cc; --border: #e5e5ea; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+        .nav-back { padding: 15px; text-align: center; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 5px rgba(0,0,0,0.02); }
+        .nav-back a { text-decoration: none; color: white; background: var(--accent); padding: 8px 20px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; }
+        
+        .container { max-width: 600px; margin: 0 auto; padding: 20px 15px 50px 15px; box-sizing: border-box; }
+        .header { text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px dashed var(--border); }
+        .header h1 { margin: 0 0 5px 0; font-size: 1.8rem; color: #1a252f; }
+        .header p { margin: 0; color: var(--muted); font-size: 0.9rem; font-weight: bold; }
+        
+        .word-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 22px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); transition: all 0.2s ease; }
+        .word-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+        .header-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .header-right { font-size: 1.2rem; color: var(--muted); transition: transform 0.3s ease; }
+        
+        .word-index { background: var(--accent); color: #fff; padding: 2px 8px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; }
+        .word-title { font-size: 2.2rem; margin: 0; color: #d35400; text-transform: lowercase; font-family: Georgia, serif; }
+        
+        .word-content { margin-top: 18px; padding-top: 15px; border-top: 1px solid #f0f0f0; }
+        
+        .definition-box { background: #fdfbf7; border-left: 4px solid var(--accent); padding: 12px 15px; border-radius: 0 8px 8px 0; margin-bottom: 15px; }
+        .def-zh { font-size: 1.1rem; font-weight: bold; color: #2c3e50; margin-bottom: 5px; }
+        .def-en { font-size: 0.95rem; color: var(--muted); font-style: italic; }
+        
+        .meta-label { display: block; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+        
+        .grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .meta-card { background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #f0f0f0; margin-bottom: 15px; }
+        .collocations-box { background: #f0f7ff; border-color: #e1efff; }
+        .exp-box { background: #fffcf0; border-color: #fce8b2; }
+        
+        .img-box { padding: 0; overflow: hidden; display: flex; justify-content: center; background: #fafafa; border: none; }
+        .img-box img { max-width: 100%; height: auto; border-radius: 8px; }
+        
+        .vertical-list { list-style: none; padding: 0; margin: 0; }
+        .vertical-list li { margin-bottom: 6px; font-size: 0.95rem; line-height: 1.4; display: block; }
+        .vertical-list li:last-child { margin-bottom: 0; }
+        .exp-list li { color: #5c4d22; font-size: 0.9rem; }
+        .en-word { color: #2c3e50; font-weight: 600; font-family: Georgia, serif; font-size: 1.05rem; margin-right: 6px; }
+        .trans-zh { color: #7f8c8d; font-size: 0.85rem; }
+        
+        .example-box { border-top: 1px dashed var(--border); padding-top: 15px; margin-top: 15px; }
+        .sentence { font-size: 1.05rem; line-height: 1.6; color: var(--text); margin-bottom: 8px; font-family: Georgia, serif; }
+        .hl-word { color: var(--accent); font-weight: bold; text-decoration: underline; text-decoration-color: rgba(0,102,204,0.3); text-decoration-thickness: 3px; }
+        .source { font-size: 0.8rem; color: var(--muted); text-align: right; font-weight: bold; }
+        
+        /* 编辑模式样式 */
+        .editing .editable-node[contenteditable="true"] {
+            outline: 2px dashed var(--accent);
+            padding: 2px 4px;
+            background: rgba(0,102,204,0.05);
+            border-radius: 4px;
+            cursor: text;
+        }
+        
+        #gh-save-btn {
+            display: none; position: fixed; bottom: 20px; right: 20px;
+            background: #d35400; color: white; padding: 14px 24px;
+            border-radius: 30px; box-shadow: 0 4px 12px rgba(211,84,0,0.3);
+            z-index: 1000; font-weight: bold; font-size: 1rem;
+            cursor: pointer; transition: transform 0.2s;
+        }
+        #gh-save-btn:active { transform: scale(0.95); }
+        
+        @media (max-width: 500px) { .grid-layout { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="nav-back"><a href="../../index.html">🔙 返回学习日历</a></div>
+    <div class="container">
+        <div class="header">
+            <h1>Daily Five Words</h1>
+            <p>📝 2026-06-27 · 进阶词汇集训</p>
+        </div>
+        
+        <div class="word-card">
+            <div class="word-header" onclick="toggleCard(0)" title="点击展开/折叠">
+                <div class="header-left">
+                    <span class="word-index">#1</span>
+                    <h2 class="word-title editable-node">aback</h2>
+                </div>
+                <div class="header-right" id="arrow-0">▼</div>
+            </div>
+            
+            <div id="content-0" class="word-content" style="display: none;">
+                <div class="definition-box">
+                    <div class="def-zh editable-node">adv. 向后；处于顶风位置；向后地；吓了一跳</div>
+                    <div class="def-en editable-node">Towards the back or rear; backwards.</div>
+                </div>
+                
+                <div class="meta-card exp-box"><span class="meta-label">📚 讲解与辨析 (Explanation)</span><ul class="vertical-list exp-list"><li class='editable-node'>💡 <span class='trans-zh'>作为副词：在后面；在后面；落后一段距离。</span></li><li class='editable-node'>💡 <span class='trans-zh'>作为副词：出其不意；出其不意。吓了一跳；傻眼了。 （见用法）</span></li></ul></div>
+                
+                
+                <div class="meta-card collocations-box"><span class="meta-label">🔗 常见搭配 (Collocations)</span><ul class="vertical-list"><li><span class="en-word">aback when</span> <span class="trans-zh">(惊讶时)</span></li><li><span class="en-word">aback that</span> <span class="trans-zh">(对此)</span></li><li><span class="en-word">aback but</span> <span class="trans-zh">(惊讶但是)</span></li><li><span class="en-word">aback because</span> <span class="trans-zh">(震惊是因为)</span></li><li><span class="en-word">aback was</span> <span class="trans-zh">(回来是)</span></li></ul></div>
+                
+            </div>
+        </div>
+        
+        <div class="word-card">
+            <div class="word-header" onclick="toggleCard(1)" title="点击展开/折叠">
+                <div class="header-left">
+                    <span class="word-index">#2</span>
+                    <h2 class="word-title editable-node">abandonment</h2>
+                </div>
+                <div class="header-right" id="arrow-1">▼</div>
+            </div>
+            
+            <div id="content-1" class="word-content" style="display: none;">
+                <div class="definition-box">
+                    <div class="def-zh editable-node">n. 抛弃；放纵</div>
+                    <div class="def-en editable-node">The act of abandoning, or the state of being abandoned; total desertion; relinquishment.</div>
+                </div>
+                
+                <div class="meta-card exp-box"><span class="meta-label">📚 讲解与辨析 (Explanation)</span><ul class="vertical-list exp-list"><li class='editable-node'>💡 <span class='trans-zh'>作为名词：自愿离开与某人有特殊关系的人，如妻子、丈夫或孩子；遗弃。</span></li><li class='editable-node'>💡 <span class='trans-zh'>作为名词：废弃的建筑物或结构。</span></li></ul></div>
+                
+                <div class="grid-layout"><div class="meta-card"><span class="meta-label">近义词 (Synonyms)</span><ul class="vertical-list"><li><span class="en-word">abandoning</span> <span class="trans-zh">(放弃)</span></li><li><span class="en-word">desertion</span> <span class="trans-zh">(遗弃)</span></li><li><span class="en-word">resignation</span> <span class="trans-zh">(辞职)</span></li><li><span class="en-word">abnegation</span> <span class="trans-zh">(克制)</span></li><li><span class="en-word">abrogation</span> <span class="trans-zh">(废除)</span></li></ul></div><div class="meta-card"><span class="meta-label">反义词 (Antonyms)</span><ul class="vertical-list"><li><span class="en-word">acquisition</span> <span class="trans-zh">(收购)</span></li><li><span class="en-word">watchfulness</span> <span class="trans-zh">(警惕)</span></li><li><span class="en-word">arrogation</span> <span class="trans-zh">(霸凌)</span></li><li><span class="en-word">correction</span> <span class="trans-zh">(更正)</span></li><li><span class="en-word">entertainment</span> <span class="trans-zh">(娱乐)</span></li></ul></div></div>
+                <div class="meta-card collocations-box"><span class="meta-label">🔗 常见搭配 (Collocations)</span><ul class="vertical-list"><li><span class="en-word">abandonment was</span> <span class="trans-zh">(遗弃是)</span></li><li><span class="en-word">abandonment that</span> <span class="trans-zh">(放弃那)</span></li><li><span class="en-word">abandonment may</span> <span class="trans-zh">(遗弃可能)</span></li><li><span class="en-word">abandonment has</span> <span class="trans-zh">(遗弃有)</span></li><li><span class="en-word">abandonment which</span> <span class="trans-zh">(遗弃哪个)</span></li></ul></div>
+                
+            <div class="example-box">
+                <span class="meta-label">📰 真实语境 (In Context)</span>
+                <div class="sentence editable-node">"Since he left her, she's suing him for divorce on grounds of <span class='hl-word'>abandonment</span>."</div>
+                <div class="source editable-node">📖 Dictionary Example</div>
+            </div>
+            
+            </div>
+        </div>
+        
+        <div class="word-card">
+            <div class="word-header" onclick="toggleCard(2)" title="点击展开/折叠">
+                <div class="header-left">
+                    <span class="word-index">#3</span>
+                    <h2 class="word-title editable-node">abate</h2>
+                </div>
+                <div class="header-right" id="arrow-2">▼</div>
+            </div>
+            
+            <div id="content-2" class="word-content" style="display: none;">
+                <div class="definition-box">
+                    <div class="def-zh editable-node">v. <正式>（使）减轻，减少；<法律>废除；消除（妨碍行为）；（指令状、法律诉讼等）无效；【名】 （Abate）（英、意、法、埃塞）阿巴特（人名）</div>
+                    <div class="def-en editable-node">Abatement.</div>
+                </div>
+                
+                <div class="meta-card exp-box"><span class="meta-label">📚 讲解与辨析 (Explanation)</span><ul class="vertical-list exp-list"><li class='editable-node'>💡 <span class='trans-zh'>作为动词：（在法律之外已废弃）结束；使停止。</span></li><li class='editable-node'>💡 <span class='trans-zh'>作为动词：变得无效。</span></li></ul></div>
+                
+                <div class="grid-layout"><div class="meta-card"><span class="meta-label">近义词 (Synonyms)</span><ul class="vertical-list"><li><span class="en-word">subside</span> <span class="trans-zh">(消退)</span></li><li><span class="en-word">lower</span> <span class="trans-zh">(降低)</span></li><li><span class="en-word">terminate</span> <span class="trans-zh">(终止)</span></li><li><span class="en-word">depress</span> <span class="trans-zh">(压抑)</span></li><li><span class="en-word">fail</span> <span class="trans-zh">(失败)</span></li></ul></div><div class="meta-card"><span class="meta-label">反义词 (Antonyms)</span><ul class="vertical-list"><li><span class="en-word">foment</span> <span class="trans-zh">(煽动)</span></li><li><span class="en-word">extend</span> <span class="trans-zh">(延长)</span></li><li><span class="en-word">aggravate</span> <span class="trans-zh">(加剧)</span></li><li><span class="en-word">increase</span> <span class="trans-zh">(增加)</span></li><li><span class="en-word">intensify</span> <span class="trans-zh">(强化)</span></li></ul></div></div>
+                <div class="meta-card collocations-box"><span class="meta-label">🔗 常见搭配 (Collocations)</span><ul class="vertical-list"><li><span class="en-word">abate his</span> <span class="trans-zh">(减少他的)</span></li><li><span class="en-word">abate their</span> <span class="trans-zh">(减少他们的)</span></li><li><span class="en-word">abate one</span> <span class="trans-zh">(减少一)</span></li><li><span class="en-word">abate its</span> <span class="trans-zh">(减弱其)</span></li><li><span class="en-word">abate any</span> <span class="trans-zh">(减少任何)</span></li></ul></div>
+                
+            <div class="example-box">
+                <span class="meta-label">📰 真实语境 (In Context)</span>
+                <div class="sentence editable-node">"to <span class='hl-word'>abate</span> a nuisance"</div>
+                <div class="source editable-node">📖 Dictionary Example</div>
+            </div>
+            
+            </div>
+        </div>
+        
+        <div class="word-card">
+            <div class="word-header" onclick="toggleCard(3)" title="点击展开/折叠">
+                <div class="header-left">
+                    <span class="word-index">#4</span>
+                    <h2 class="word-title editable-node">abdomen</h2>
+                </div>
+                <div class="header-right" id="arrow-3">▼</div>
+            </div>
+            
+            <div id="content-3" class="word-content" style="display: none;">
+                <div class="definition-box">
+                    <div class="def-zh editable-node">n. （人体）腹，腹部；（昆虫）腹部</div>
+                    <div class="def-en editable-node">The fat surrounding the belly.</div>
+                </div>
+                
+                <div class="meta-card exp-box"><span class="meta-label">📚 讲解与辨析 (Explanation)</span><ul class="vertical-list exp-list"><li class='editable-node'>💡 <span class='trans-zh'>作为名词：腹部，或胸部和骨盆之间的身体部分，不包括背部；或者在一些低等脊椎动物中，心脏和尾部区域之间的部分。</span></li><li class='editable-node'>💡 <span class='trans-zh'>作为名词：腹腔，内衬腹膜，内含内脏；在人类中，通常局限于横膈膜和骨盆起始部之间的部分，其余部分称为骨盆腔。</span></li></ul></div>
+                
+                <div class="grid-layout"><div class="meta-card"><span class="meta-label">近义词 (Synonyms)</span><ul class="vertical-list"><li><span class="en-word">stomach</span> <span class="trans-zh">(胃)</span></li><li><span class="en-word">tummy</span> <span class="trans-zh">(肚子)</span></li><li><span class="en-word">belly</span> <span class="trans-zh">(腹部)</span></li></ul></div></div>
+                <div class="meta-card collocations-box"><span class="meta-label">🔗 常见搭配 (Collocations)</span><ul class="vertical-list"><li><span class="en-word">abdomen was</span> <span class="trans-zh">(腹部是)</span></li><li><span class="en-word">abdomen may</span> <span class="trans-zh">(腹部可能)</span></li><li><span class="en-word">abdomen should</span> <span class="trans-zh">(腹部应该)</span></li><li><span class="en-word">abdomen has</span> <span class="trans-zh">(腹部有)</span></li><li><span class="en-word">abdomen from</span> <span class="trans-zh">(腹部从)</span></li></ul></div>
+                
+            <div class="example-box">
+                <span class="meta-label">📰 真实语境 (In Context)</span>
+                <div class="sentence editable-node">"He was all bent over complaining of pains in the <span class='hl-word'>abdomen</span>."</div>
+                <div class="source editable-node">📖 Dictionary Example</div>
+            </div>
+            
+            </div>
+        </div>
+        
+        <div class="word-card">
+            <div class="word-header" onclick="toggleCard(4)" title="点击展开/折叠">
+                <div class="header-left">
+                    <span class="word-index">#5</span>
+                    <h2 class="word-title editable-node">abdominal</h2>
+                </div>
+                <div class="header-right" id="arrow-4">▼</div>
+            </div>
+            
+            <div id="content-4" class="word-content" style="display: none;">
+                <div class="definition-box">
+                    <div class="def-zh editable-node">adj. 腹部的；n. 腹肌</div>
+                    <div class="def-en editable-node">A fish of the order Abdominales.</div>
+                </div>
+                
+                <div class="meta-card exp-box"><span class="meta-label">📚 讲解与辨析 (Explanation)</span><ul class="vertical-list exp-list"><li class='editable-node'>💡 <span class='trans-zh'>作为名词：（通常为复数 tantum）腹部肌肉。</span></li><li class='editable-node'>💡 <span class='trans-zh'>作为形容词：属于或关于腹部的；腹侧。</span></li></ul></div>
+                
+                <div class="grid-layout"><div class="meta-card"><span class="meta-label">近义词 (Synonyms)</span><ul class="vertical-list"><li><span class="en-word">ventral</span> <span class="trans-zh">(腹侧)</span></li><li><span class="en-word">Cypriniformes</span> <span class="trans-zh">(鲤形目)</span></li></ul></div></div>
+                <div class="meta-card collocations-box"><span class="meta-label">🔗 常见搭配 (Collocations)</span><ul class="vertical-list"><li><span class="en-word">abdominal pain</span> <span class="trans-zh">(腹痛)</span></li><li><span class="en-word">abdominal wall</span> <span class="trans-zh">(腹壁)</span></li><li><span class="en-word">abdominal cavity</span> <span class="trans-zh">(腹腔)</span></li><li><span class="en-word">abdominal muscles</span> <span class="trans-zh">(腹部肌肉)</span></li><li><span class="en-word">abdominal aorta</span> <span class="trans-zh">(腹主动脉)</span></li></ul></div>
+                
+            <div class="example-box">
+                <span class="meta-label">📰 真实语境 (In Context)</span>
+                <div class="sentence editable-node">"<span class='hl-word'>abdominal</span> cavity"</div>
+                <div class="source editable-node">📖 Dictionary Example</div>
+            </div>
+            
+            </div>
+        </div>
+        
+    </div>
+    
+    <div id="gh-save-btn" onclick="saveToGitHub()">💾 保存到 GitHub</div>
+    
+    <script>
+        // GitHub API 配置区
+        const GH_OWNER = 'moodHappy'; 
+        const GH_REPO = 'DailyFiveWords';
+        const FILE_PATH = 'docs/2026/6/2026_6_27_2153.html'; 
+
+        // 展开折叠逻辑
+        function toggleCard(index) {
+            const content = document.getElementById('content-' + index);
+            const arrow = document.getElementById('arrow-' + index);
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                arrow.style.transform = 'rotate(180deg)';
+            } else {
+                content.style.display = 'none';
+                arrow.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        // 双指触摸切换编辑模式
+        let isEditing = false;
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                toggleEditMode();
+            }
+        }, {passive: false});
+
+        function toggleEditMode() {
+            isEditing = !isEditing;
+            const editables = document.querySelectorAll('.editable-node');
+            const btn = document.getElementById('gh-save-btn');
+            
+            if (isEditing) {
+                document.body.classList.add('editing');
+                editables.forEach(el => el.setAttribute('contenteditable', 'true'));
+                btn.style.display = 'block';
+                // 自动展开所有卡片方便编辑
+                document.querySelectorAll('.word-content').forEach(el => el.style.display = 'block');
+                document.querySelectorAll('.header-right').forEach(el => el.style.transform = 'rotate(180deg)');
+            } else {
+                document.body.classList.remove('editing');
+                editables.forEach(el => el.removeAttribute('contenteditable'));
+                btn.style.display = 'none';
+            }
+        }
+
+        // 提交修改到 GitHub
+        async function saveToGitHub() {
+            const token = localStorage.getItem('gh_token') || prompt('请输入您的 GitHub Personal Access Token (仅首次需要):');
+            if (!token) return;
+            localStorage.setItem('gh_token', token);
+
+            const btn = document.getElementById('gh-save-btn');
+            btn.innerText = '正在保存...';
+
+            try {
+                // 1. 清理编辑状态的 DOM 属性
+                document.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+                document.body.classList.remove('editing');
+                btn.style.display = 'none';
+
+                // 2. 获取文件的当前 SHA (更新文件必须提供)
+                const apiUrl = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${FILE_PATH}`;
+                const getRes = await fetch(apiUrl, {
+                    headers: { 'Authorization': `token ${token}` }
+                });
+                
+                let sha = '';
+                if (getRes.ok) {
+                    const fileData = await getRes.json();
+                    sha = fileData.sha;
+                }
+
+                // 3. 提取最新的完整 HTML 源码并 Base64 编码
+                const newHtml = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+                const encodedContent = btoa(unescape(encodeURIComponent(newHtml)));
+
+                // 4. 发起 PUT 请求提交更新
+                const putRes = await fetch(apiUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: `Update ${FILE_PATH} via Web Edit`,
+                        content: encodedContent,
+                        sha: sha || undefined
+                    })
+                });
+
+                if (putRes.ok) {
+                    alert('✅ 成功同步至 GitHub！');
+                } else {
+                    const err = await putRes.json();
+                    if (err.message.includes("Bad credentials")) {
+                        localStorage.removeItem('gh_token');
+                        alert('❌ Token 无效或已过期，请重新填写');
+                    } else {
+                        alert('❌ 保存失败: ' + err.message);
+                    }
+                }
+            } catch (e) {
+                alert('❌ 网络或请求错误: ' + e.message);
+            } finally {
+                // 恢复按钮状态
+                btn.style.display = isEditing ? 'block' : 'none';
+                btn.innerText = '💾 保存到 GitHub';
+                if (isEditing) toggleEditMode(); // 如果刚才处于编辑模式，则切回来以便继续
+            }
+        }
+    </script>
+</body>
+</html>

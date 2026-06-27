@@ -4,6 +4,9 @@ on:
   schedule:
     # 20:00 UTC = 04:00 AM UTC+8 (北京时间)
     - cron: '0 20 * * *'
+  push:
+    paths:
+      - 'build_daily_words.py' # 只要你更新这个 Python 脚本，就会自动触发运行！
   workflow_dispatch:
 
 jobs:

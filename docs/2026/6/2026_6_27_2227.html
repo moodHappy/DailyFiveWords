@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
+<html lang="zh-CN"><relingo-app id="relingo-toast-container" style="z-index: 2147483647; position: fixed; left: 0px; right: 0px; visibility: visible;"><div data-rht-toaster="" style="position: fixed; z-index: 9999; inset: 16px; pointer-events: none; background-color: transparent;"></div></relingo-app><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Daily Five Words | 2026-06-27</title>
@@ -71,39 +70,607 @@
         
         @media (max-width: 500px) { .grid-layout { grid-template-columns: 1fr; } }
     </style>
-</head>
-<body>
-    <div class="nav-back"><a href="../../index.html">🔙 返回学习日历</a></div>
+<style>
+        /* --- 通用：段落朗读按钮 --- */
+        .para-read-btn {
+            display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; margin-left: 8px;
+            cursor: pointer; color: #5f6368; transition: all 0.2s ease; vertical-align: middle; border-radius: 50%;
+            background-color: rgba(0,0,0,0.05); user-select: none; -webkit-tap-highlight-color: transparent;
+        }
+        .para-read-btn:hover { background-color: rgba(0,0,0,0.1); color: #202124; transform: scale(1.05); }
+        .para-read-btn svg { width: 16px; height: 16px; display: block; pointer-events: none; }
+        
+        /* --- Twitter/X：顶部 Header 按钮 --- */
+        .x-tts-header-btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            color: #1d9bf0;
+            transition: all 0.2s;
+            margin-right: 2px;
+            background: transparent;
+            border: none;
+            outline: none;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 999;
+        }
+        .x-tts-header-btn:hover { background-color: rgba(29, 155, 240, 0.1); transform: scale(1.05); }
+        .x-tts-header-btn svg { width: 18px; height: 18px; fill: currentColor; pointer-events: none; }
+
+        /* --- 播放/加载状态 --- */
+        .tts-playing { color: #1a73e8 !important; animation: tts-pulse 1.5s infinite; background-color: rgba(29, 155, 240, 0.15) !important; }
+        .tts-loading { opacity: 0.6; animation: tts-breathe 1.2s ease-in-out infinite; cursor: wait; }
+        
+        @keyframes tts-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(29, 155, 240, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(29, 155, 240, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(29, 155, 240, 0); }
+        }
+        @keyframes tts-breathe {
+            0% { opacity: 0.5; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1.1); }
+            100% { opacity: 0.5; transform: scale(0.9); }
+        }
+
+        /* --- 设置界面 (UI 修复版) --- */
+        .tts-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.5); z-index: 2147483647; 
+            display: none; align-items: center; justify-content: center; 
+            backdrop-filter: blur(2px); 
+        }
+        .tts-modal { 
+            background: white; 
+            width: 92%; /* 移动端默认宽度 */
+            max-width: 500px; 
+            padding: 16px; /* 减小内边距 */
+            border-radius: 12px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #333; 
+            display: flex; 
+            flex-direction: column; 
+            max-height: 85vh; 
+            box-sizing: border-box; /* 关键：防止 padding 撑大宽度 */
+        }
+        .tts-modal * { box-sizing: border-box; } /* 全局盒模型修正 */
+
+        .tts-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 12px; }
+        .tts-header h3 { margin: 0; font-size: 17px; font-weight: 600; }
+        .tts-close { background: none; border: none; font-size: 22px; cursor: pointer; color: #999; padding: 0 8px; }
+        
+        .tts-body { overflow-y: auto; flex-grow: 1; padding-right: 2px; }
+        
+        .tts-switch-box { margin-bottom: 12px; padding: 10px; background: #f8f9fa; border-radius: 6px; display: flex; align-items: center; font-size: 14px; }
+        .tts-switch-box label { display: flex; align-items: center; cursor: pointer; width: 100%; font-weight: 500; }
+        .tts-switch-box input[type="checkbox"] { margin-right: 10px; width: 16px; height: 16px; accent-color: #1a73e8; }
+        
+        .tts-source-row { display: flex; gap: 6px; margin-bottom: 8px; align-items: center; }
+        .tts-inp { 
+            padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; font-family: monospace; 
+            min-width: 0; /* 关键：允许 Flex 子项收缩 */
+        }
+        .tts-url { flex: 1; } /* 自动占据剩余空间 */
+        .tts-token { width: 60px; text-align: center; } /* 默认宽度 */
+        
+        .tts-btn { padding: 0; border-radius: 6px; border: none; cursor: pointer; font-size: 14px; font-weight: 500; transition: background 0.2s; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .tts-btn-add { background: #e8f5e9; color: #2e7d32; width: 100%; margin-bottom: 12px; border: 1px dashed #81c784; padding: 8px; font-size: 13px; }
+        .tts-btn-del { background: #ffebee; color: #c62828; width: 30px; height: 30px; font-size: 16px; }
+        .tts-btn-test { background: #fff3e0; color: #ef6c00; width: 30px; height: 30px; font-size: 14px; }
+        
+        .test-ok { background: #e8f5e9 !important; color: #2e7d32 !important; }
+        .test-err { background: #ffebee !important; color: #c62828 !important; }
+        
+        .tts-footer { margin-top: 12px; padding-top: 12px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
+        .tts-footer button { padding: 6px 16px; font-size: 13px; }
+        .tts-save { background: #1a73e8; color: white; }
+        .tts-cancel { background: #f1f3f4; color: #333; }
+        
+        /* --- 移动端特别优化 (屏幕小于 480px) --- */
+        @media (max-width: 480px) {
+            .tts-modal { width: 95%; padding: 12px; }
+            .tts-token { width: 45px; padding: 8px 4px; placeholder-shown: font-size: 10px; } /* 极窄屏幕下缩小 Token */
+            .tts-token::placeholder { font-size: 10px; }
+            .tts-inp { font-size: 12px; padding: 6px; }
+            .tts-source-row { gap: 4px; }
+            .tts-btn-test, .tts-btn-del { width: 28px; height: 28px; }
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .tts-modal { background: #202124; color: #e8eaed; }
+            .tts-header, .tts-footer { border-color: #3c4043; }
+            .tts-switch-box { background: #303134; }
+            .tts-inp { background: #303134; border-color: #5f6368; color: white; }
+            .tts-btn-add { background: #303134; color: #81c784; border-color: #81c784; }
+            .tts-btn-del { background: #451a1a; color: #ef9a9a; }
+            .tts-btn-test { background: #4e342e; color: #ffb74d; }
+            .test-ok { background: #1b5e20 !important; color: #a5d6a7 !important; }
+            .test-err { background: #b71c1c !important; color: #ef9a9a !important; }
+            .tts-cancel { background: #303134; color: #e8eaed; }
+        }
+    </style><style id="tts-visibility-style">.para-read-btn, .x-tts-header-btn { display: none !important; }</style><style id="_goober"> @keyframes go2264125279{from{transform:scale(0) rotate(45deg);opacity:0;}to{transform:scale(1) rotate(45deg);opacity:1;}}@keyframes go3020080000{from{transform:scale(0);opacity:0;}to{transform:scale(1);opacity:1;}}@keyframes go463499852{from{transform:scale(0) rotate(90deg);opacity:0;}to{transform:scale(1) rotate(90deg);opacity:1;}}@keyframes go1268368563{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}@keyframes go1310225428{from{transform:scale(0) rotate(45deg);opacity:0;}to{transform:scale(1) rotate(45deg);opacity:1;}}@keyframes go651618207{0%{height:0;width:0;opacity:0;}40%{height:0;width:6px;opacity:1;}100%{opacity:1;height:10px;}}@keyframes go901347462{from{transform:scale(0.6);opacity:0.4;}to{transform:scale(1);opacity:1;}}.go4109123758{z-index:9999;}.go4109123758 > *{pointer-events:auto;}</style><style id="VMst0.9528800495299935">div.TouchGesture_Toast{  width: 200px;  height: 100px;  opacity: 0.75;  position: absolute;  z-index: 2147483648;  top: 100px;  left: 200px;  background-color: black; pointer-events:none;} </style><style id="VMst0.3865706352369449">span.TouchGesture_ToastText{  position: absolute;  left: 0;  right: 0;  text-align: center;  color: white; pointer-events:none; font-family:-apple-system,BlinkMacSystemFont,Helvetica Neue,Helvetica,Arial,PingFang SC,Hiragino Sans GB,Microsoft YaHei,sans-serif;}</style><style id="VMst0.6587828245366228">div.TouchGesture_Toast.fadeout{  -webkit-transition: all 1.5s; -moz-transition: all 1.5s; -ms-transition: all 1.5s; -o-transition: all 1.5s; transition: all 1.5s; opacity: 0;}</style><style id="VMst0.4286601179253171">div.TouchGesture_Btn{opacity: 0.75; z-index: 2147483648; width: 50px;height: 50px;text-align: center;font-size: 25;margin: 20;background-color: black;color: white; font-family:apple color emoji,segoe ui emoji,noto color emoji,android emoji,emojisymbols,emojione mozilla,twemoji mozilla,segoe ui symbol;}</style><style id="VMst0.6095140076831739">div.TouchGesture_Btn.fadeout{  -webkit-transition: all 1.5s; -moz-transition: all 1.5s; -ms-transition: all 1.5s; -o-transition: all 1.5s; transition: all 1.5s; opacity: 0;}</style><style id="VMst0.6783904662941547">@media all and (-webkit-min-device-pixel-ratio:0) and (min-resolution: .001dpcm) { .toast_blink {background: -webkit-gradient( linear, left top, right top, color-stop(0, #000000), color-stop(0.5, #ffffff),color-stop(1,#000000) );-webkit-text-fill-color: transparent;-webkit-background-clip: text;-webkit-background-size: 200% 100%;-webkit-animation: toast_blink_animation 1s infinite linear;}}</style><style id="VMst0.13868616285355484">@-webkit-keyframes toast_blink_animation {0%  { background-position: 150% 0;}100% { background-position: -50% 0;}}</style><style id="VMst0.5167298138545043">
+                /* 悬浮球基础样式 */
+                #anki-float-btn { position: fixed; width: 44px; height: 44px; border-radius: 50%; background: rgba(76, 175, 80, 0.85); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); color: white; box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3); display: flex; justify-content: center; align-items: center; font-family: system-ui, -apple-system, sans-serif; font-size: 24px; font-weight: 600; z-index: 2147483646; cursor: grab; user-select: none; touch-action: none; transition: left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), right 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), top 0.3s, width 0.3s, border-radius 0.3s, opacity 0.3s, background 0.2s; overflow: hidden; }
+                #anki-float-btn:active { cursor: grabbing; background: rgba(56, 142, 60, 0.95); }
+                #anki-float-btn.docked-left { width: 6px !important; border-radius: 0 8px 8px 0 !important; left: 0 !important; right: auto !important; opacity: 0.6; box-shadow: none; }
+                #anki-float-btn.docked-right { width: 6px !important; border-radius: 8px 0 0 8px !important; left: auto !important; right: 0 !important; opacity: 0.6; box-shadow: none; }
+                
+                /* 主面板样式 */
+                #anki-universal-container { position: absolute; z-index: 2147483647; background: #ffffff; border-radius: 12px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.05); display: none; font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; width: 280px; box-sizing: border-box; animation: ankiPopIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+                @keyframes ankiPopIn { 0% { opacity: 0; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
+                @media screen and (max-width: 768px) { #anki-universal-container { position: fixed !important; top: auto !important; bottom: 0 !important; left: 0 !important; width: 100vw !important; max-width: 100vw !important; border-radius: 20px 20px 0 0 !important; box-shadow: 0 -4px 24px rgba(0,0,0,0.15) !important; padding-bottom: max(16px, env(safe-area-inset-bottom)) !important; animation: ankiSlideUp 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.1) !important; } }
+                @keyframes ankiSlideUp { 0% { transform: translateY(100%); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+                
+                #anki-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #f0f0f0; font-size: 15px; font-weight: 600; color: #333; }
+                #anki-close-btn { cursor: pointer; color: #999; font-size: 20px; line-height: 1; padding: 0 4px; transition: color 0.2s; }
+                #anki-close-btn:hover { color: #f44336; }
+                .anki-input-modern { width: 100%; box-sizing: border-box; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; outline: none; transition: all 0.2s; background: #fafafa; color: #333; }
+                .anki-input-modern:focus { background: #fff; border-color: #4CAF50; box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.15); }
+                .anki-input-modern:disabled { background: #f5f5f5; cursor: not-allowed; color: #aaa; }
+                #anki-manual-search, #anki-field-selector { padding: 10px; margin-bottom: 10px; }
+                #anki-field-selector { cursor: pointer; font-weight: 500; padding: 8px;}
+                #anki-universal-container textarea { height: 120px; padding: 10px; resize: vertical; margin-bottom: 0px; line-height: 1.5; font-size: 13px; }
+                #anki-universal-btn { background: #4CAF50; color: white; border: none; border-radius: 8px; padding: 10px 0; font-size: 14px; font-weight: 600; cursor: pointer; width: 100%; transition: all 0.2s; box-shadow: 0 2px 6px rgba(76, 175, 80, 0.3); margin-bottom: 12px; }
+                #anki-universal-btn:hover:not(:disabled) { background: #43a047; transform: translateY(-1px); box-shadow: 0 4px 10px rgba(76, 175, 80, 0.4); }
+                #anki-universal-btn:disabled { background: #e0e0e0 !important; box-shadow: none; color: #999; cursor: not-allowed; }
+                #anki-search-status { font-size: 12px; color: #666; margin-bottom: 10px; display: block; word-break: break-all; font-weight: 500; min-height: 16px; }
+                #anki-add-option { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; font-size: 13px; color: #555; margin: -4px 0 10px 4px; }
+                #anki-add-option label { cursor: pointer; user-select: none; display: flex; align-items: center; gap: 4px; }
+                #anki-add-option input { cursor: pointer; margin: 0; }
+            </style><style id="VMst0.19548915188455596">
+        #tm-dashboard {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 90%; max-width: 420px; max-height: 90vh;
+            background: #fff; border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+            z-index: 99999; display: flex; flex-direction: column;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            opacity: 0; pointer-events: none; transition: opacity 0.2s;
+        }
+        #tm-dashboard.open { opacity: 1; pointer-events: auto; }
+        .tm-header { padding: 15px; border-bottom: 1px solid #eee; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center; border-radius: 16px 16px 0 0; }
+        .tm-title { font-weight: 700; font-size: 16px; color: #333; }
+        .tm-close { cursor: pointer; padding: 5px 10px; font-size: 20px; color: #666; }
+        .tm-back { cursor: pointer; padding: 5px 10px; font-size: 18px; color: #007bff; display: none; }
+        .tm-body { flex: 1; overflow-y: auto; padding: 15px; background: #fff; border-radius: 0 0 16px 16px; }
+        
+        /* Grid 布局 */
+        .tm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; user-select: none; }
+        
+        /* 卡片样式 */
+        .tm-card {
+            background: #f1f3f5; border-radius: 10px; padding: 12px;
+            text-align: center; cursor: pointer; transition: transform 0.1s, background 0.2s;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 80px; 
+            touch-action: none;
+        }
+        .tm-card:active { transform: scale(0.95); }
+        .tm-card-icon { font-size: 22px; margin-bottom: 6px; pointer-events: none; }
+        .tm-card-text { font-size: 13px; font-weight: 500; color: #495057; pointer-events: none; line-height: 1.2; }
+        .tm-card.primary { background: #e7f5ff; color: #004085; }
+        .tm-card.full { grid-column: span 2; }
+        
+        /* 拖拽时的样式 */
+        .sortable-ghost { opacity: 0.4; background: #cce5ff; border: 2px dashed #007bff; }
+        .sortable-drag { cursor: grabbing; opacity: 1; background: #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.1); transform: scale(1.05); }
+
+        .tm-list-item { padding: 10px; border-bottom: 1px solid #eee; position: relative; }
+        .tm-list-title { font-weight: 600; font-size: 14px; color: #007bff; text-decoration: none; display:block; padding-right: 30px; }
+        .tm-list-meta { font-size: 11px; color: #999; margin-top: 2px; }
+        .tm-list-del { position: absolute; right: 5px; top: 10px; cursor: pointer; color: #dc3545; font-size: 16px; padding: 0 5px; opacity: 0.6; }
+        .tm-list-del:hover { opacity: 1; }
+
+        .tm-btn { width: 100%; padding: 10px; border: none; border-radius: 8px; background: #007bff; color: white; margin-top: 10px; cursor: pointer; transition: background 0.2s; }
+        .tm-btn:hover { background: #0056b3; }
+        .tm-input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 10px; box-sizing: border-box; }
+        .tm-select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 10px; background: #fff; }
+        .tm-range-group { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+        .tm-range { flex: 1; margin: 0 10px; }
+        .tm-label { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px; display: block; }
+        
+        .tm-footer { padding: 8px; font-size: 10px; color: #adb5bd; text-align: center; border-top: 1px solid #eee; }
+        #tm-toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.85); color: white; padding: 10px 20px;
+            border-radius: 20px; font-size: 13px; z-index: 100000;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s; white-space: nowrap;
+        }
+        
+        /* 日历样式 */
+        .tm-cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .tm-cal-nav { cursor: pointer; user-select: none; padding: 5px 12px; background: #f1f3f5; border-radius: 6px; font-weight: bold; color:#555; }
+        .tm-cal-controls { display: flex; gap: 5px; }
+        .tm-cal-select { border: 1px solid #eee; background: #fff; font-size: 14px; padding: 4px; border-radius: 4px; font-weight: 500; color: #333; }
+        .tm-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+        .tm-cal-head { text-align: center; font-size: 11px; color: #999; padding-bottom: 5px; }
+        .tm-cal-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border: 1px solid #eee; border-radius: 6px; font-size: 12px; position: relative; background: #fff; }
+        .tm-cal-cell.has { background: #e7f5ff; border-color: #d0ebff; font-weight: bold; cursor: pointer; color: #004085; }
+        .tm-cal-badge { position: absolute; bottom: 1px; right: 2px; font-size: 8px; color: #007bff; opacity: 0.8; }
+    </style><style id="tm-custom-font-style"></style><style>:root{--swal2-outline: 0 0 0 3px rgba(100, 150, 200, 0.5);--swal2-container-padding: 0.625em;--swal2-backdrop: rgba(0, 0, 0, 0.4);--swal2-backdrop-transition: background-color 0.15s;--swal2-width: 32em;--swal2-padding: 0 0 1.25em;--swal2-border: none;--swal2-border-radius: 0.3125rem;--swal2-background: white;--swal2-color: #545454;--swal2-show-animation: swal2-show 0.3s;--swal2-hide-animation: swal2-hide 0.15s forwards;--swal2-icon-zoom: 1;--swal2-icon-animations: true;--swal2-title-padding: 0.8em 1em 0;--swal2-html-container-padding: 1em 1.6em 0.3em;--swal2-input-border: 1px solid #d9d9d9;--swal2-input-border-radius: 0.1875em;--swal2-input-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.06), 0 0 0 3px transparent;--swal2-input-background: transparent;--swal2-input-transition: border-color 0.2s, box-shadow 0.2s;--swal2-input-hover-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.06), 0 0 0 3px transparent;--swal2-input-focus-border: 1px solid #b4dbed;--swal2-input-focus-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.06), 0 0 0 3px rgba(100, 150, 200, 0.5);--swal2-progress-step-background: #add8e6;--swal2-validation-message-background: #f0f0f0;--swal2-validation-message-color: #666;--swal2-footer-border-color: #eee;--swal2-footer-background: transparent;--swal2-footer-color: inherit;--swal2-timer-progress-bar-background: rgba(0, 0, 0, 0.3);--swal2-close-button-position: initial;--swal2-close-button-inset: auto;--swal2-close-button-font-size: 2.5em;--swal2-close-button-color: #ccc;--swal2-close-button-transition: color 0.2s, box-shadow 0.2s;--swal2-close-button-outline: initial;--swal2-close-button-box-shadow: inset 0 0 0 3px transparent;--swal2-close-button-focus-box-shadow: inset var(--swal2-outline);--swal2-close-button-hover-transform: none;--swal2-actions-justify-content: center;--swal2-actions-width: auto;--swal2-actions-margin: 1.25em auto 0;--swal2-actions-padding: 0;--swal2-actions-border-radius: 0;--swal2-actions-background: transparent;--swal2-action-button-transition: background-color 0.2s, box-shadow 0.2s;--swal2-action-button-hover: black 10%;--swal2-action-button-active: black 10%;--swal2-confirm-button-box-shadow: none;--swal2-confirm-button-border-radius: 0.25em;--swal2-confirm-button-background-color: #7066e0;--swal2-confirm-button-color: #fff;--swal2-deny-button-box-shadow: none;--swal2-deny-button-border-radius: 0.25em;--swal2-deny-button-background-color: #dc3741;--swal2-deny-button-color: #fff;--swal2-cancel-button-box-shadow: none;--swal2-cancel-button-border-radius: 0.25em;--swal2-cancel-button-background-color: #6e7881;--swal2-cancel-button-color: #fff;--swal2-toast-show-animation: swal2-toast-show 0.5s;--swal2-toast-hide-animation: swal2-toast-hide 0.1s forwards;--swal2-toast-border: none;--swal2-toast-box-shadow: 0 0 1px hsl(0deg 0% 0% / 0.075), 0 1px 2px hsl(0deg 0% 0% / 0.075), 1px 2px 4px hsl(0deg 0% 0% / 0.075), 1px 3px 8px hsl(0deg 0% 0% / 0.075), 2px 4px 16px hsl(0deg 0% 0% / 0.075)}[data-swal2-theme=dark]{--swal2-dark-theme-black: #19191a;--swal2-dark-theme-white: #e1e1e1;--swal2-background: var(--swal2-dark-theme-black);--swal2-color: var(--swal2-dark-theme-white);--swal2-footer-border-color: #555;--swal2-input-background: color-mix(in srgb, var(--swal2-dark-theme-black), var(--swal2-dark-theme-white) 10%);--swal2-validation-message-background: color-mix( in srgb, var(--swal2-dark-theme-black), var(--swal2-dark-theme-white) 10% );--swal2-validation-message-color: var(--swal2-dark-theme-white);--swal2-timer-progress-bar-background: rgba(255, 255, 255, 0.7)}@media(prefers-color-scheme: dark){[data-swal2-theme=auto]{--swal2-dark-theme-black: #19191a;--swal2-dark-theme-white: #e1e1e1;--swal2-background: var(--swal2-dark-theme-black);--swal2-color: var(--swal2-dark-theme-white);--swal2-footer-border-color: #555;--swal2-input-background: color-mix(in srgb, var(--swal2-dark-theme-black), var(--swal2-dark-theme-white) 10%);--swal2-validation-message-background: color-mix( in srgb, var(--swal2-dark-theme-black), var(--swal2-dark-theme-white) 10% );--swal2-validation-message-color: var(--swal2-dark-theme-white);--swal2-timer-progress-bar-background: rgba(255, 255, 255, 0.7)}}body.swal2-shown:not(.swal2-no-backdrop,.swal2-toast-shown){overflow:hidden}body.swal2-height-auto{height:auto !important}body.swal2-no-backdrop .swal2-container{background-color:rgba(0,0,0,0) !important;pointer-events:none}body.swal2-no-backdrop .swal2-container .swal2-popup{pointer-events:auto}body.swal2-no-backdrop .swal2-container .swal2-modal{box-shadow:0 0 10px var(--swal2-backdrop)}body.swal2-toast-shown .swal2-container{box-sizing:border-box;width:360px;max-width:100%;background-color:rgba(0,0,0,0);pointer-events:none}body.swal2-toast-shown .swal2-container.swal2-top{inset:0 auto auto 50%;transform:translateX(-50%)}body.swal2-toast-shown .swal2-container.swal2-top-end,body.swal2-toast-shown .swal2-container.swal2-top-right{inset:0 0 auto auto}body.swal2-toast-shown .swal2-container.swal2-top-start,body.swal2-toast-shown .swal2-container.swal2-top-left{inset:0 auto auto 0}body.swal2-toast-shown .swal2-container.swal2-center-start,body.swal2-toast-shown .swal2-container.swal2-center-left{inset:50% auto auto 0;transform:translateY(-50%)}body.swal2-toast-shown .swal2-container.swal2-center{inset:50% auto auto 50%;transform:translate(-50%, -50%)}body.swal2-toast-shown .swal2-container.swal2-center-end,body.swal2-toast-shown .swal2-container.swal2-center-right{inset:50% 0 auto auto;transform:translateY(-50%)}body.swal2-toast-shown .swal2-container.swal2-bottom-start,body.swal2-toast-shown .swal2-container.swal2-bottom-left{inset:auto auto 0 0}body.swal2-toast-shown .swal2-container.swal2-bottom{inset:auto auto 0 50%;transform:translateX(-50%)}body.swal2-toast-shown .swal2-container.swal2-bottom-end,body.swal2-toast-shown .swal2-container.swal2-bottom-right{inset:auto 0 0 auto}@media print{body.swal2-shown:not(.swal2-no-backdrop,.swal2-toast-shown){overflow-y:scroll !important}body.swal2-shown:not(.swal2-no-backdrop,.swal2-toast-shown)>[aria-hidden=true]{display:none}body.swal2-shown:not(.swal2-no-backdrop,.swal2-toast-shown) .swal2-container{position:static !important}}div:where(.swal2-container){display:grid;position:fixed;z-index:1060;inset:0;box-sizing:border-box;grid-template-areas:"top-start     top            top-end" "center-start  center         center-end" "bottom-start  bottom-center  bottom-end";grid-template-rows:minmax(min-content, auto) minmax(min-content, auto) minmax(min-content, auto);height:100%;padding:var(--swal2-container-padding);overflow-x:hidden;transition:var(--swal2-backdrop-transition);-webkit-overflow-scrolling:touch}div:where(.swal2-container).swal2-backdrop-show,div:where(.swal2-container).swal2-noanimation{background:var(--swal2-backdrop)}div:where(.swal2-container).swal2-backdrop-hide{background:rgba(0,0,0,0) !important}div:where(.swal2-container).swal2-top-start,div:where(.swal2-container).swal2-center-start,div:where(.swal2-container).swal2-bottom-start{grid-template-columns:minmax(0, 1fr) auto auto}div:where(.swal2-container).swal2-top,div:where(.swal2-container).swal2-center,div:where(.swal2-container).swal2-bottom{grid-template-columns:auto minmax(0, 1fr) auto}div:where(.swal2-container).swal2-top-end,div:where(.swal2-container).swal2-center-end,div:where(.swal2-container).swal2-bottom-end{grid-template-columns:auto auto minmax(0, 1fr)}div:where(.swal2-container).swal2-top-start>.swal2-popup{align-self:start}div:where(.swal2-container).swal2-top>.swal2-popup{grid-column:2;place-self:start center}div:where(.swal2-container).swal2-top-end>.swal2-popup,div:where(.swal2-container).swal2-top-right>.swal2-popup{grid-column:3;place-self:start end}div:where(.swal2-container).swal2-center-start>.swal2-popup,div:where(.swal2-container).swal2-center-left>.swal2-popup{grid-row:2;align-self:center}div:where(.swal2-container).swal2-center>.swal2-popup{grid-column:2;grid-row:2;place-self:center center}div:where(.swal2-container).swal2-center-end>.swal2-popup,div:where(.swal2-container).swal2-center-right>.swal2-popup{grid-column:3;grid-row:2;place-self:center end}div:where(.swal2-container).swal2-bottom-start>.swal2-popup,div:where(.swal2-container).swal2-bottom-left>.swal2-popup{grid-column:1;grid-row:3;align-self:end}div:where(.swal2-container).swal2-bottom>.swal2-popup{grid-column:2;grid-row:3;place-self:end center}div:where(.swal2-container).swal2-bottom-end>.swal2-popup,div:where(.swal2-container).swal2-bottom-right>.swal2-popup{grid-column:3;grid-row:3;place-self:end end}div:where(.swal2-container).swal2-grow-row>.swal2-popup,div:where(.swal2-container).swal2-grow-fullscreen>.swal2-popup{grid-column:1/4;width:100%}div:where(.swal2-container).swal2-grow-column>.swal2-popup,div:where(.swal2-container).swal2-grow-fullscreen>.swal2-popup{grid-row:1/4;align-self:stretch}div:where(.swal2-container).swal2-no-transition{transition:none !important}div:where(.swal2-container)[popover]{width:auto;border:0}div:where(.swal2-container) div:where(.swal2-popup){display:none;position:relative;box-sizing:border-box;grid-template-columns:minmax(0, 100%);width:var(--swal2-width);max-width:100%;padding:var(--swal2-padding);border:var(--swal2-border);border-radius:var(--swal2-border-radius);background:var(--swal2-background);color:var(--swal2-color);font-family:inherit;font-size:1rem;container-name:swal2-popup}div:where(.swal2-container) div:where(.swal2-popup):focus{outline:none}div:where(.swal2-container) div:where(.swal2-popup).swal2-loading{overflow-y:hidden}div:where(.swal2-container) div:where(.swal2-popup).swal2-draggable{cursor:grab}div:where(.swal2-container) div:where(.swal2-popup).swal2-draggable div:where(.swal2-icon){cursor:grab}div:where(.swal2-container) div:where(.swal2-popup).swal2-dragging{cursor:grabbing}div:where(.swal2-container) div:where(.swal2-popup).swal2-dragging div:where(.swal2-icon){cursor:grabbing}div:where(.swal2-container) h2:where(.swal2-title){position:relative;max-width:100%;margin:0;padding:var(--swal2-title-padding);color:inherit;font-size:1.875em;font-weight:600;text-align:center;text-transform:none;overflow-wrap:break-word;cursor:initial}div:where(.swal2-container) div:where(.swal2-actions){display:flex;z-index:1;box-sizing:border-box;flex-wrap:wrap;align-items:center;justify-content:var(--swal2-actions-justify-content);width:var(--swal2-actions-width);margin:var(--swal2-actions-margin);padding:var(--swal2-actions-padding);border-radius:var(--swal2-actions-border-radius);background:var(--swal2-actions-background)}div:where(.swal2-container) div:where(.swal2-loader){display:none;align-items:center;justify-content:center;width:2.2em;height:2.2em;margin:0 1.875em;animation:swal2-rotate-loading 1.5s linear 0s infinite normal;border-width:.25em;border-style:solid;border-radius:100%;border-color:#2778c4 rgba(0,0,0,0) #2778c4 rgba(0,0,0,0)}div:where(.swal2-container) button:where(.swal2-styled){margin:.3125em;padding:.625em 1.1em;transition:var(--swal2-action-button-transition);border:none;box-shadow:0 0 0 3px rgba(0,0,0,0);font-weight:500}div:where(.swal2-container) button:where(.swal2-styled):not([disabled]){cursor:pointer}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-confirm){border-radius:var(--swal2-confirm-button-border-radius);background:initial;background-color:var(--swal2-confirm-button-background-color);box-shadow:var(--swal2-confirm-button-box-shadow);color:var(--swal2-confirm-button-color);font-size:1em}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-confirm):hover{background-color:color-mix(in srgb, var(--swal2-confirm-button-background-color), var(--swal2-action-button-hover))}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-confirm):active{background-color:color-mix(in srgb, var(--swal2-confirm-button-background-color), var(--swal2-action-button-active))}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-deny){border-radius:var(--swal2-deny-button-border-radius);background:initial;background-color:var(--swal2-deny-button-background-color);box-shadow:var(--swal2-deny-button-box-shadow);color:var(--swal2-deny-button-color);font-size:1em}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-deny):hover{background-color:color-mix(in srgb, var(--swal2-deny-button-background-color), var(--swal2-action-button-hover))}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-deny):active{background-color:color-mix(in srgb, var(--swal2-deny-button-background-color), var(--swal2-action-button-active))}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-cancel){border-radius:var(--swal2-cancel-button-border-radius);background:initial;background-color:var(--swal2-cancel-button-background-color);box-shadow:var(--swal2-cancel-button-box-shadow);color:var(--swal2-cancel-button-color);font-size:1em}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-cancel):hover{background-color:color-mix(in srgb, var(--swal2-cancel-button-background-color), var(--swal2-action-button-hover))}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-cancel):active{background-color:color-mix(in srgb, var(--swal2-cancel-button-background-color), var(--swal2-action-button-active))}div:where(.swal2-container) button:where(.swal2-styled):focus-visible{outline:none;box-shadow:var(--swal2-action-button-focus-box-shadow)}div:where(.swal2-container) button:where(.swal2-styled)[disabled]:not(.swal2-loading){opacity:.4}div:where(.swal2-container) button:where(.swal2-styled)::-moz-focus-inner{border:0}div:where(.swal2-container) div:where(.swal2-footer){margin:1em 0 0;padding:1em 1em 0;border-top:1px solid var(--swal2-footer-border-color);background:var(--swal2-footer-background);color:var(--swal2-footer-color);font-size:1em;text-align:center;cursor:initial}div:where(.swal2-container) .swal2-timer-progress-bar-container{position:absolute;right:0;bottom:0;left:0;grid-column:auto !important;overflow:hidden;border-bottom-right-radius:var(--swal2-border-radius);border-bottom-left-radius:var(--swal2-border-radius)}div:where(.swal2-container) div:where(.swal2-timer-progress-bar){width:100%;height:.25em;background:var(--swal2-timer-progress-bar-background)}div:where(.swal2-container) img:where(.swal2-image){max-width:100%;margin:2em auto 1em;cursor:initial}div:where(.swal2-container) button:where(.swal2-close){position:var(--swal2-close-button-position);inset:var(--swal2-close-button-inset);z-index:2;align-items:center;justify-content:center;width:1.2em;height:1.2em;margin-top:0;margin-right:0;margin-bottom:-1.2em;padding:0;overflow:hidden;transition:var(--swal2-close-button-transition);border:none;border-radius:var(--swal2-border-radius);outline:var(--swal2-close-button-outline);background:rgba(0,0,0,0);color:var(--swal2-close-button-color);font-family:monospace;font-size:var(--swal2-close-button-font-size);cursor:pointer;justify-self:end}div:where(.swal2-container) button:where(.swal2-close):hover{transform:var(--swal2-close-button-hover-transform);background:rgba(0,0,0,0);color:#f27474}div:where(.swal2-container) button:where(.swal2-close):focus-visible{outline:none;box-shadow:var(--swal2-close-button-focus-box-shadow)}div:where(.swal2-container) button:where(.swal2-close)::-moz-focus-inner{border:0}div:where(.swal2-container) div:where(.swal2-html-container){z-index:1;justify-content:center;margin:0;padding:var(--swal2-html-container-padding);overflow:auto;color:inherit;font-size:1.125em;font-weight:normal;line-height:normal;text-align:center;overflow-wrap:break-word;word-break:break-word;cursor:initial}div:where(.swal2-container) input:where(.swal2-input),div:where(.swal2-container) input:where(.swal2-file),div:where(.swal2-container) textarea:where(.swal2-textarea),div:where(.swal2-container) select:where(.swal2-select),div:where(.swal2-container) div:where(.swal2-radio),div:where(.swal2-container) label:where(.swal2-checkbox){margin:1em 2em 3px}div:where(.swal2-container) input:where(.swal2-input),div:where(.swal2-container) input:where(.swal2-file),div:where(.swal2-container) textarea:where(.swal2-textarea){box-sizing:border-box;width:auto;transition:var(--swal2-input-transition);border:var(--swal2-input-border);border-radius:var(--swal2-input-border-radius);background:var(--swal2-input-background);box-shadow:var(--swal2-input-box-shadow);color:inherit;font-size:1.125em}div:where(.swal2-container) input:where(.swal2-input).swal2-inputerror,div:where(.swal2-container) input:where(.swal2-file).swal2-inputerror,div:where(.swal2-container) textarea:where(.swal2-textarea).swal2-inputerror{border-color:#f27474 !important;box-shadow:0 0 2px #f27474 !important}div:where(.swal2-container) input:where(.swal2-input):hover,div:where(.swal2-container) input:where(.swal2-file):hover,div:where(.swal2-container) textarea:where(.swal2-textarea):hover{box-shadow:var(--swal2-input-hover-box-shadow)}div:where(.swal2-container) input:where(.swal2-input):focus,div:where(.swal2-container) input:where(.swal2-file):focus,div:where(.swal2-container) textarea:where(.swal2-textarea):focus{border:var(--swal2-input-focus-border);outline:none;box-shadow:var(--swal2-input-focus-box-shadow)}div:where(.swal2-container) input:where(.swal2-input)::placeholder,div:where(.swal2-container) input:where(.swal2-file)::placeholder,div:where(.swal2-container) textarea:where(.swal2-textarea)::placeholder{color:#ccc}div:where(.swal2-container) .swal2-range{margin:1em 2em 3px;background:var(--swal2-background)}div:where(.swal2-container) .swal2-range input{width:80%}div:where(.swal2-container) .swal2-range output{width:20%;color:inherit;font-weight:600;text-align:center}div:where(.swal2-container) .swal2-range input,div:where(.swal2-container) .swal2-range output{height:2.625em;padding:0;font-size:1.125em;line-height:2.625em}div:where(.swal2-container) .swal2-input{height:2.625em;padding:0 .75em}div:where(.swal2-container) .swal2-file{width:75%;margin-right:auto;margin-left:auto;background:var(--swal2-input-background);font-size:1.125em}div:where(.swal2-container) .swal2-textarea{height:6.75em;padding:.75em}div:where(.swal2-container) .swal2-select{min-width:50%;max-width:100%;padding:.375em .625em;background:var(--swal2-input-background);color:inherit;font-size:1.125em}div:where(.swal2-container) .swal2-radio,div:where(.swal2-container) .swal2-checkbox{align-items:center;justify-content:center;background:var(--swal2-background);color:inherit}div:where(.swal2-container) .swal2-radio label,div:where(.swal2-container) .swal2-checkbox label{margin:0 .6em;font-size:1.125em}div:where(.swal2-container) .swal2-radio input,div:where(.swal2-container) .swal2-checkbox input{flex-shrink:0;margin:0 .4em}div:where(.swal2-container) label:where(.swal2-input-label){display:flex;justify-content:center;margin:1em auto 0}div:where(.swal2-container) div:where(.swal2-validation-message){align-items:center;justify-content:center;margin:1em 0 0;padding:.625em;overflow:hidden;background:var(--swal2-validation-message-background);color:var(--swal2-validation-message-color);font-size:1em;font-weight:300}div:where(.swal2-container) div:where(.swal2-validation-message)::before{content:"!";display:inline-block;width:1.5em;min-width:1.5em;height:1.5em;margin:0 .625em;border-radius:50%;background-color:#f27474;color:#fff;font-weight:600;line-height:1.5em;text-align:center}div:where(.swal2-container) .swal2-progress-steps{flex-wrap:wrap;align-items:center;max-width:100%;margin:1.25em auto;padding:0;background:rgba(0,0,0,0);font-weight:600}div:where(.swal2-container) .swal2-progress-steps li{display:inline-block;position:relative}div:where(.swal2-container) .swal2-progress-steps .swal2-progress-step{z-index:20;flex-shrink:0;width:2em;height:2em;border-radius:2em;background:#2778c4;color:#fff;line-height:2em;text-align:center}div:where(.swal2-container) .swal2-progress-steps .swal2-progress-step.swal2-active-progress-step{background:#2778c4}div:where(.swal2-container) .swal2-progress-steps .swal2-progress-step.swal2-active-progress-step~.swal2-progress-step{background:var(--swal2-progress-step-background);color:#fff}div:where(.swal2-container) .swal2-progress-steps .swal2-progress-step.swal2-active-progress-step~.swal2-progress-step-line{background:var(--swal2-progress-step-background)}div:where(.swal2-container) .swal2-progress-steps .swal2-progress-step-line{z-index:10;flex-shrink:0;width:2.5em;height:.4em;margin:0 -1px;background:#2778c4}div:where(.swal2-icon){position:relative;box-sizing:content-box;justify-content:center;width:5em;height:5em;margin:2.5em auto .6em;zoom:var(--swal2-icon-zoom);border:.25em solid rgba(0,0,0,0);border-radius:50%;border-color:#000;font-family:inherit;line-height:5em;cursor:default;user-select:none}div:where(.swal2-icon) .swal2-icon-content{display:flex;align-items:center;font-size:3.75em}div:where(.swal2-icon).swal2-error{border-color:#f27474;color:#f27474}div:where(.swal2-icon).swal2-error .swal2-x-mark{position:relative;flex-grow:1}div:where(.swal2-icon).swal2-error [class^=swal2-x-mark-line]{display:block;position:absolute;top:2.3125em;width:2.9375em;height:.3125em;border-radius:.125em;background-color:#f27474}div:where(.swal2-icon).swal2-error [class^=swal2-x-mark-line][class$=left]{left:1.0625em;transform:rotate(45deg)}div:where(.swal2-icon).swal2-error [class^=swal2-x-mark-line][class$=right]{right:1em;transform:rotate(-45deg)}@container swal2-popup style(--swal2-icon-animations:true){div:where(.swal2-icon).swal2-error.swal2-icon-show{animation:swal2-animate-error-icon .5s}div:where(.swal2-icon).swal2-error.swal2-icon-show .swal2-x-mark{animation:swal2-animate-error-x-mark .5s}}div:where(.swal2-icon).swal2-warning{border-color:#f8bb86;color:#f8bb86}@container swal2-popup style(--swal2-icon-animations:true){div:where(.swal2-icon).swal2-warning.swal2-icon-show{animation:swal2-animate-error-icon .5s}div:where(.swal2-icon).swal2-warning.swal2-icon-show .swal2-icon-content{animation:swal2-animate-i-mark .5s}}div:where(.swal2-icon).swal2-info{border-color:#3fc3ee;color:#3fc3ee}@container swal2-popup style(--swal2-icon-animations:true){div:where(.swal2-icon).swal2-info.swal2-icon-show{animation:swal2-animate-error-icon .5s}div:where(.swal2-icon).swal2-info.swal2-icon-show .swal2-icon-content{animation:swal2-animate-i-mark .8s}}div:where(.swal2-icon).swal2-question{border-color:#87adbd;color:#87adbd}@container swal2-popup style(--swal2-icon-animations:true){div:where(.swal2-icon).swal2-question.swal2-icon-show{animation:swal2-animate-error-icon .5s}div:where(.swal2-icon).swal2-question.swal2-icon-show .swal2-icon-content{animation:swal2-animate-question-mark .8s}}div:where(.swal2-icon).swal2-success{border-color:#a5dc86;color:#a5dc86}div:where(.swal2-icon).swal2-success [class^=swal2-success-circular-line]{position:absolute;width:3.75em;height:7.5em;border-radius:50%}div:where(.swal2-icon).swal2-success [class^=swal2-success-circular-line][class$=left]{top:-0.4375em;left:-2.0635em;transform:rotate(-45deg);transform-origin:3.75em 3.75em;border-radius:7.5em 0 0 7.5em}div:where(.swal2-icon).swal2-success [class^=swal2-success-circular-line][class$=right]{top:-0.6875em;left:1.875em;transform:rotate(-45deg);transform-origin:0 3.75em;border-radius:0 7.5em 7.5em 0}div:where(.swal2-icon).swal2-success .swal2-success-ring{position:absolute;z-index:2;top:-0.25em;left:-0.25em;box-sizing:content-box;width:100%;height:100%;border:.25em solid rgba(165,220,134,.3);border-radius:50%}div:where(.swal2-icon).swal2-success .swal2-success-fix{position:absolute;z-index:1;top:.5em;left:1.625em;width:.4375em;height:5.625em;transform:rotate(-45deg)}div:where(.swal2-icon).swal2-success [class^=swal2-success-line]{display:block;position:absolute;z-index:2;height:.3125em;border-radius:.125em;background-color:#a5dc86}div:where(.swal2-icon).swal2-success [class^=swal2-success-line][class$=tip]{top:2.875em;left:.8125em;width:1.5625em;transform:rotate(45deg)}div:where(.swal2-icon).swal2-success [class^=swal2-success-line][class$=long]{top:2.375em;right:.5em;width:2.9375em;transform:rotate(-45deg)}@container swal2-popup style(--swal2-icon-animations:true){div:where(.swal2-icon).swal2-success.swal2-icon-show .swal2-success-line-tip{animation:swal2-animate-success-line-tip .75s}div:where(.swal2-icon).swal2-success.swal2-icon-show .swal2-success-line-long{animation:swal2-animate-success-line-long .75s}div:where(.swal2-icon).swal2-success.swal2-icon-show .swal2-success-circular-line-right{animation:swal2-rotate-success-circular-line 4.25s ease-in}}[class^=swal2]{-webkit-tap-highlight-color:rgba(0,0,0,0)}.swal2-show{animation:var(--swal2-show-animation)}.swal2-hide{animation:var(--swal2-hide-animation)}.swal2-noanimation{transition:none}.swal2-scrollbar-measure{position:absolute;top:-9999px;width:50px;height:50px;overflow:scroll}.swal2-rtl .swal2-close{margin-right:initial;margin-left:0}.swal2-rtl .swal2-timer-progress-bar{right:0;left:auto}.swal2-toast{box-sizing:border-box;grid-column:1/4 !important;grid-row:1/4 !important;grid-template-columns:min-content auto min-content;padding:1em;overflow-y:hidden;border:var(--swal2-toast-border);background:var(--swal2-background);box-shadow:var(--swal2-toast-box-shadow);pointer-events:auto}.swal2-toast>*{grid-column:2}.swal2-toast h2:where(.swal2-title){margin:.5em 1em;padding:0;font-size:1em;text-align:initial}.swal2-toast .swal2-loading{justify-content:center}.swal2-toast input:where(.swal2-input){height:2em;margin:.5em;font-size:1em}.swal2-toast .swal2-validation-message{font-size:1em}.swal2-toast div:where(.swal2-footer){margin:.5em 0 0;padding:.5em 0 0;font-size:.8em}.swal2-toast button:where(.swal2-close){grid-column:3/3;grid-row:1/99;align-self:center;width:.8em;height:.8em;margin:0;font-size:2em}.swal2-toast div:where(.swal2-html-container){margin:.5em 1em;padding:0;overflow:initial;font-size:1em;text-align:initial}.swal2-toast div:where(.swal2-html-container):empty{padding:0}.swal2-toast .swal2-loader{grid-column:1;grid-row:1/99;align-self:center;width:2em;height:2em;margin:.25em}.swal2-toast .swal2-icon{grid-column:1;grid-row:1/99;align-self:center;width:2em;min-width:2em;height:2em;margin:0 .5em 0 0}.swal2-toast .swal2-icon .swal2-icon-content{display:flex;align-items:center;font-size:1.8em;font-weight:bold}.swal2-toast .swal2-icon.swal2-success .swal2-success-ring{width:2em;height:2em}.swal2-toast .swal2-icon.swal2-error [class^=swal2-x-mark-line]{top:.875em;width:1.375em}.swal2-toast .swal2-icon.swal2-error [class^=swal2-x-mark-line][class$=left]{left:.3125em}.swal2-toast .swal2-icon.swal2-error [class^=swal2-x-mark-line][class$=right]{right:.3125em}.swal2-toast div:where(.swal2-actions){justify-content:flex-start;height:auto;margin:0;margin-top:.5em;padding:0 .5em}.swal2-toast button:where(.swal2-styled){margin:.25em .5em;padding:.4em .6em;font-size:1em}.swal2-toast .swal2-success{border-color:#a5dc86}.swal2-toast .swal2-success [class^=swal2-success-circular-line]{position:absolute;width:1.6em;height:3em;border-radius:50%}.swal2-toast .swal2-success [class^=swal2-success-circular-line][class$=left]{top:-0.8em;left:-0.5em;transform:rotate(-45deg);transform-origin:2em 2em;border-radius:4em 0 0 4em}.swal2-toast .swal2-success [class^=swal2-success-circular-line][class$=right]{top:-0.25em;left:.9375em;transform-origin:0 1.5em;border-radius:0 4em 4em 0}.swal2-toast .swal2-success .swal2-success-ring{width:2em;height:2em}.swal2-toast .swal2-success .swal2-success-fix{top:0;left:.4375em;width:.4375em;height:2.6875em}.swal2-toast .swal2-success [class^=swal2-success-line]{height:.3125em}.swal2-toast .swal2-success [class^=swal2-success-line][class$=tip]{top:1.125em;left:.1875em;width:.75em}.swal2-toast .swal2-success [class^=swal2-success-line][class$=long]{top:.9375em;right:.1875em;width:1.375em}@container swal2-popup style(--swal2-icon-animations:true){.swal2-toast .swal2-success.swal2-icon-show .swal2-success-line-tip{animation:swal2-toast-animate-success-line-tip .75s}.swal2-toast .swal2-success.swal2-icon-show .swal2-success-line-long{animation:swal2-toast-animate-success-line-long .75s}}.swal2-toast.swal2-show{animation:var(--swal2-toast-show-animation)}.swal2-toast.swal2-hide{animation:var(--swal2-toast-hide-animation)}@keyframes swal2-show{0%{transform:translate3d(0, -50px, 0) scale(0.9);opacity:0}100%{transform:translate3d(0, 0, 0) scale(1);opacity:1}}@keyframes swal2-hide{0%{transform:translate3d(0, 0, 0) scale(1);opacity:1}100%{transform:translate3d(0, -50px, 0) scale(0.9);opacity:0}}@keyframes swal2-animate-success-line-tip{0%{top:1.1875em;left:.0625em;width:0}54%{top:1.0625em;left:.125em;width:0}70%{top:2.1875em;left:-0.375em;width:3.125em}84%{top:3em;left:1.3125em;width:1.0625em}100%{top:2.8125em;left:.8125em;width:1.5625em}}@keyframes swal2-animate-success-line-long{0%{top:3.375em;right:2.875em;width:0}65%{top:3.375em;right:2.875em;width:0}84%{top:2.1875em;right:0;width:3.4375em}100%{top:2.375em;right:.5em;width:2.9375em}}@keyframes swal2-rotate-success-circular-line{0%{transform:rotate(-45deg)}5%{transform:rotate(-45deg)}12%{transform:rotate(-405deg)}100%{transform:rotate(-405deg)}}@keyframes swal2-animate-error-x-mark{0%{margin-top:1.625em;transform:scale(0.4);opacity:0}50%{margin-top:1.625em;transform:scale(0.4);opacity:0}80%{margin-top:-0.375em;transform:scale(1.15)}100%{margin-top:0;transform:scale(1);opacity:1}}@keyframes swal2-animate-error-icon{0%{transform:rotateX(100deg);opacity:0}100%{transform:rotateX(0deg);opacity:1}}@keyframes swal2-rotate-loading{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}@keyframes swal2-animate-question-mark{0%{transform:rotateY(-360deg)}100%{transform:rotateY(0)}}@keyframes swal2-animate-i-mark{0%{transform:rotateZ(45deg);opacity:0}25%{transform:rotateZ(-25deg);opacity:.4}50%{transform:rotateZ(15deg);opacity:.8}75%{transform:rotateZ(-5deg);opacity:1}100%{transform:rotateX(0);opacity:1}}@keyframes swal2-toast-show{0%{transform:translateY(-0.625em) rotateZ(2deg)}33%{transform:translateY(0) rotateZ(-2deg)}66%{transform:translateY(0.3125em) rotateZ(2deg)}100%{transform:translateY(0) rotateZ(0deg)}}@keyframes swal2-toast-hide{100%{transform:rotateZ(1deg);opacity:0}}@keyframes swal2-toast-animate-success-line-tip{0%{top:.5625em;left:.0625em;width:0}54%{top:.125em;left:.125em;width:0}70%{top:.625em;left:-0.25em;width:1.625em}84%{top:1.0625em;left:.75em;width:.5em}100%{top:1.125em;left:.1875em;width:.75em}}@keyframes swal2-toast-animate-success-line-long{0%{top:1.625em;right:1.375em;width:0}65%{top:1.25em;right:.9375em;width:0}84%{top:.9375em;right:0;width:1.125em}100%{top:.9375em;right:.1875em;width:1.375em}}</style><style id="VMst0.26067896484346176">:root{--swal2-outline: 0 0 0 3px rgba(100, 150, 200, 0.5);--swal2-container-padding: 0.625em;--swal2-backdrop: rgba(0, 0, 0, 0.4);--swal2-backdrop-transition: background-color 0.15s;--swal2-width: 32em;--swal2-padding: 0 0 1.25em;--swal2-border: none;--swal2-border-radius: 0.3125rem;--swal2-background: white;--swal2-color: #545454;--swal2-show-animation: swal2-show 0.3s;--swal2-hide-animation: swal2-hide 0.15s forwards;--swal2-icon-zoom: 1;--swal2-icon-animations: true;--swal2-title-padding: 0.8em 1em 0;--swal2-html-container-padding: 1em 1.6em 0.3em;--swal2-input-border: 1px solid #d9d9d9;--swal2-input-border-radius: 0.1875em;--swal2-input-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.06), 0 0 0 3px transparent;--swal2-input-background: transparent;--swal2-input-transition: border-color 0.2s, box-shadow 0.2s;--swal2-input-hover-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.06), 0 0 0 3px transparent;--swal2-input-focus-border: 1px solid #b4dbed;--swal2-input-focus-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.06), 0 0 0 3px rgba(100, 150, 200, 0.5);--swal2-progress-step-background: #add8e6;--swal2-validation-message-background: #f0f0f0;--swal2-validation-message-color: #666;--swal2-footer-border-color: #eee;--swal2-footer-background: transparent;--swal2-footer-color: inherit;--swal2-timer-progress-bar-background: rgba(0, 0, 0, 0.3);--swal2-close-button-position: initial;--swal2-close-button-inset: auto;--swal2-close-button-font-size: 2.5em;--swal2-close-button-color: #ccc;--swal2-close-button-transition: color 0.2s, box-shadow 0.2s;--swal2-close-button-outline: initial;--swal2-close-button-box-shadow: inset 0 0 0 3px transparent;--swal2-close-button-focus-box-shadow: inset var(--swal2-outline);--swal2-close-button-hover-transform: none;--swal2-actions-justify-content: center;--swal2-actions-width: auto;--swal2-actions-margin: 1.25em auto 0;--swal2-actions-padding: 0;--swal2-actions-border-radius: 0;--swal2-actions-background: transparent;--swal2-action-button-transition: background-color 0.2s, box-shadow 0.2s;--swal2-action-button-hover: black 10%;--swal2-action-button-active: black 10%;--swal2-confirm-button-box-shadow: none;--swal2-confirm-button-border-radius: 0.25em;--swal2-confirm-button-background-color: #7066e0;--swal2-confirm-button-color: #fff;--swal2-deny-button-box-shadow: none;--swal2-deny-button-border-radius: 0.25em;--swal2-deny-button-background-color: #dc3741;--swal2-deny-button-color: #fff;--swal2-cancel-button-box-shadow: none;--swal2-cancel-button-border-radius: 0.25em;--swal2-cancel-button-background-color: #6e7881;--swal2-cancel-button-color: #fff;--swal2-toast-show-animation: swal2-toast-show 0.5s;--swal2-toast-hide-animation: swal2-toast-hide 0.1s forwards;--swal2-toast-border: none;--swal2-toast-box-shadow: 0 0 1px hsl(0deg 0% 0% / 0.075), 0 1px 2px hsl(0deg 0% 0% / 0.075), 1px 2px 4px hsl(0deg 0% 0% / 0.075), 1px 3px 8px hsl(0deg 0% 0% / 0.075), 2px 4px 16px hsl(0deg 0% 0% / 0.075)}[data-swal2-theme=dark]{--swal2-dark-theme-black: #19191a;--swal2-dark-theme-white: #e1e1e1;--swal2-background: var(--swal2-dark-theme-black);--swal2-color: var(--swal2-dark-theme-white);--swal2-footer-border-color: #555;--swal2-input-background: color-mix(in srgb, var(--swal2-dark-theme-black), var(--swal2-dark-theme-white) 10%);--swal2-validation-message-background: color-mix( in srgb, var(--swal2-dark-theme-black), var(--swal2-dark-theme-white) 10% );--swal2-validation-message-color: var(--swal2-dark-theme-white);--swal2-timer-progress-bar-background: rgba(255, 255, 255, 0.7)}@media(prefers-color-scheme: dark){[data-swal2-theme=auto]{--swal2-dark-theme-black: #19191a;--swal2-dark-theme-white: #e1e1e1;--swal2-background: var(--swal2-dark-theme-black);--swal2-color: var(--swal2-dark-theme-white);--swal2-footer-border-color: #555;--swal2-input-background: color-mix(in srgb, var(--swal2-dark-theme-black), var(--swal2-dark-theme-white) 10%);--swal2-validation-message-background: color-mix( in srgb, var(--swal2-dark-theme-black), var(--swal2-dark-theme-white) 10% );--swal2-validation-message-color: var(--swal2-dark-theme-white);--swal2-timer-progress-bar-background: rgba(255, 255, 255, 0.7)}}body.swal2-shown:not(.swal2-no-backdrop,.swal2-toast-shown){overflow:hidden}body.swal2-height-auto{height:auto !important}body.swal2-no-backdrop .swal2-container{background-color:rgba(0,0,0,0) !important;pointer-events:none}body.swal2-no-backdrop .swal2-container .swal2-popup{pointer-events:all}body.swal2-no-backdrop .swal2-container .swal2-modal{box-shadow:0 0 10px var(--swal2-backdrop)}body.swal2-toast-shown .swal2-container{box-sizing:border-box;width:360px;max-width:100%;background-color:rgba(0,0,0,0);pointer-events:none}body.swal2-toast-shown .swal2-container.swal2-top{inset:0 auto auto 50%;transform:translateX(-50%)}body.swal2-toast-shown .swal2-container.swal2-top-end,body.swal2-toast-shown .swal2-container.swal2-top-right{inset:0 0 auto auto}body.swal2-toast-shown .swal2-container.swal2-top-start,body.swal2-toast-shown .swal2-container.swal2-top-left{inset:0 auto auto 0}body.swal2-toast-shown .swal2-container.swal2-center-start,body.swal2-toast-shown .swal2-container.swal2-center-left{inset:50% auto auto 0;transform:translateY(-50%)}body.swal2-toast-shown .swal2-container.swal2-center{inset:50% auto auto 50%;transform:translate(-50%, -50%)}body.swal2-toast-shown .swal2-container.swal2-center-end,body.swal2-toast-shown .swal2-container.swal2-center-right{inset:50% 0 auto auto;transform:translateY(-50%)}body.swal2-toast-shown .swal2-container.swal2-bottom-start,body.swal2-toast-shown .swal2-container.swal2-bottom-left{inset:auto auto 0 0}body.swal2-toast-shown .swal2-container.swal2-bottom{inset:auto auto 0 50%;transform:translateX(-50%)}body.swal2-toast-shown .swal2-container.swal2-bottom-end,body.swal2-toast-shown .swal2-container.swal2-bottom-right{inset:auto 0 0 auto}@media print{body.swal2-shown:not(.swal2-no-backdrop,.swal2-toast-shown){overflow-y:scroll !important}body.swal2-shown:not(.swal2-no-backdrop,.swal2-toast-shown)>[aria-hidden=true]{display:none}body.swal2-shown:not(.swal2-no-backdrop,.swal2-toast-shown) .swal2-container{position:static !important}}div:where(.swal2-container){display:grid;position:fixed;z-index:1060;inset:0;box-sizing:border-box;grid-template-areas:"top-start     top            top-end" "center-start  center         center-end" "bottom-start  bottom-center  bottom-end";grid-template-rows:minmax(min-content, auto) minmax(min-content, auto) minmax(min-content, auto);height:100%;padding:var(--swal2-container-padding);overflow-x:hidden;transition:var(--swal2-backdrop-transition);-webkit-overflow-scrolling:touch}div:where(.swal2-container).swal2-backdrop-show,div:where(.swal2-container).swal2-noanimation{background:var(--swal2-backdrop)}div:where(.swal2-container).swal2-backdrop-hide{background:rgba(0,0,0,0) !important}div:where(.swal2-container).swal2-top-start,div:where(.swal2-container).swal2-center-start,div:where(.swal2-container).swal2-bottom-start{grid-template-columns:minmax(0, 1fr) auto auto}div:where(.swal2-container).swal2-top,div:where(.swal2-container).swal2-center,div:where(.swal2-container).swal2-bottom{grid-template-columns:auto minmax(0, 1fr) auto}div:where(.swal2-container).swal2-top-end,div:where(.swal2-container).swal2-center-end,div:where(.swal2-container).swal2-bottom-end{grid-template-columns:auto auto minmax(0, 1fr)}div:where(.swal2-container).swal2-top-start>.swal2-popup{align-self:start}div:where(.swal2-container).swal2-top>.swal2-popup{grid-column:2;place-self:start center}div:where(.swal2-container).swal2-top-end>.swal2-popup,div:where(.swal2-container).swal2-top-right>.swal2-popup{grid-column:3;place-self:start end}div:where(.swal2-container).swal2-center-start>.swal2-popup,div:where(.swal2-container).swal2-center-left>.swal2-popup{grid-row:2;align-self:center}div:where(.swal2-container).swal2-center>.swal2-popup{grid-column:2;grid-row:2;place-self:center center}div:where(.swal2-container).swal2-center-end>.swal2-popup,div:where(.swal2-container).swal2-center-right>.swal2-popup{grid-column:3;grid-row:2;place-self:center end}div:where(.swal2-container).swal2-bottom-start>.swal2-popup,div:where(.swal2-container).swal2-bottom-left>.swal2-popup{grid-column:1;grid-row:3;align-self:end}div:where(.swal2-container).swal2-bottom>.swal2-popup{grid-column:2;grid-row:3;place-self:end center}div:where(.swal2-container).swal2-bottom-end>.swal2-popup,div:where(.swal2-container).swal2-bottom-right>.swal2-popup{grid-column:3;grid-row:3;place-self:end end}div:where(.swal2-container).swal2-grow-row>.swal2-popup,div:where(.swal2-container).swal2-grow-fullscreen>.swal2-popup{grid-column:1/4;width:100%}div:where(.swal2-container).swal2-grow-column>.swal2-popup,div:where(.swal2-container).swal2-grow-fullscreen>.swal2-popup{grid-row:1/4;align-self:stretch}div:where(.swal2-container).swal2-no-transition{transition:none !important}div:where(.swal2-container)[popover]{width:auto;border:0}div:where(.swal2-container) div:where(.swal2-popup){display:none;position:relative;box-sizing:border-box;grid-template-columns:minmax(0, 100%);width:var(--swal2-width);max-width:100%;padding:var(--swal2-padding);border:var(--swal2-border);border-radius:var(--swal2-border-radius);background:var(--swal2-background);color:var(--swal2-color);font-family:inherit;font-size:1rem;container-name:swal2-popup}div:where(.swal2-container) div:where(.swal2-popup):focus{outline:none}div:where(.swal2-container) div:where(.swal2-popup).swal2-loading{overflow-y:hidden}div:where(.swal2-container) div:where(.swal2-popup).swal2-draggable{cursor:grab}div:where(.swal2-container) div:where(.swal2-popup).swal2-draggable div:where(.swal2-icon){cursor:grab}div:where(.swal2-container) div:where(.swal2-popup).swal2-dragging{cursor:grabbing}div:where(.swal2-container) div:where(.swal2-popup).swal2-dragging div:where(.swal2-icon){cursor:grabbing}div:where(.swal2-container) h2:where(.swal2-title){position:relative;max-width:100%;margin:0;padding:var(--swal2-title-padding);color:inherit;font-size:1.875em;font-weight:600;text-align:center;text-transform:none;overflow-wrap:break-word;cursor:initial}div:where(.swal2-container) div:where(.swal2-actions){display:flex;z-index:1;box-sizing:border-box;flex-wrap:wrap;align-items:center;justify-content:var(--swal2-actions-justify-content);width:var(--swal2-actions-width);margin:var(--swal2-actions-margin);padding:var(--swal2-actions-padding);border-radius:var(--swal2-actions-border-radius);background:var(--swal2-actions-background)}div:where(.swal2-container) div:where(.swal2-loader){display:none;align-items:center;justify-content:center;width:2.2em;height:2.2em;margin:0 1.875em;animation:swal2-rotate-loading 1.5s linear 0s infinite normal;border-width:.25em;border-style:solid;border-radius:100%;border-color:#2778c4 rgba(0,0,0,0) #2778c4 rgba(0,0,0,0)}div:where(.swal2-container) button:where(.swal2-styled){margin:.3125em;padding:.625em 1.1em;transition:var(--swal2-action-button-transition);border:none;box-shadow:0 0 0 3px rgba(0,0,0,0);font-weight:500}div:where(.swal2-container) button:where(.swal2-styled):not([disabled]){cursor:pointer}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-confirm){border-radius:var(--swal2-confirm-button-border-radius);background:initial;background-color:var(--swal2-confirm-button-background-color);box-shadow:var(--swal2-confirm-button-box-shadow);color:var(--swal2-confirm-button-color);font-size:1em}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-confirm):hover{background-color:color-mix(in srgb, var(--swal2-confirm-button-background-color), var(--swal2-action-button-hover))}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-confirm):active{background-color:color-mix(in srgb, var(--swal2-confirm-button-background-color), var(--swal2-action-button-active))}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-deny){border-radius:var(--swal2-deny-button-border-radius);background:initial;background-color:var(--swal2-deny-button-background-color);box-shadow:var(--swal2-deny-button-box-shadow);color:var(--swal2-deny-button-color);font-size:1em}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-deny):hover{background-color:color-mix(in srgb, var(--swal2-deny-button-background-color), var(--swal2-action-button-hover))}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-deny):active{background-color:color-mix(in srgb, var(--swal2-deny-button-background-color), var(--swal2-action-button-active))}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-cancel){border-radius:var(--swal2-cancel-button-border-radius);background:initial;background-color:var(--swal2-cancel-button-background-color);box-shadow:var(--swal2-cancel-button-box-shadow);color:var(--swal2-cancel-button-color);font-size:1em}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-cancel):hover{background-color:color-mix(in srgb, var(--swal2-cancel-button-background-color), var(--swal2-action-button-hover))}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-cancel):active{background-color:color-mix(in srgb, var(--swal2-cancel-button-background-color), var(--swal2-action-button-active))}div:where(.swal2-container) button:where(.swal2-styled):focus-visible{outline:none;box-shadow:var(--swal2-action-button-focus-box-shadow)}div:where(.swal2-container) button:where(.swal2-styled)[disabled]:not(.swal2-loading){opacity:.4}div:where(.swal2-container) button:where(.swal2-styled)::-moz-focus-inner{border:0}div:where(.swal2-container) div:where(.swal2-footer){margin:1em 0 0;padding:1em 1em 0;border-top:1px solid var(--swal2-footer-border-color);background:var(--swal2-footer-background);color:var(--swal2-footer-color);font-size:1em;text-align:center;cursor:initial}div:where(.swal2-container) .swal2-timer-progress-bar-container{position:absolute;right:0;bottom:0;left:0;grid-column:auto !important;overflow:hidden;border-bottom-right-radius:var(--swal2-border-radius);border-bottom-left-radius:var(--swal2-border-radius)}div:where(.swal2-container) div:where(.swal2-timer-progress-bar){width:100%;height:.25em;background:var(--swal2-timer-progress-bar-background)}div:where(.swal2-container) img:where(.swal2-image){max-width:100%;margin:2em auto 1em;cursor:initial}div:where(.swal2-container) button:where(.swal2-close){position:var(--swal2-close-button-position);inset:var(--swal2-close-button-inset);z-index:2;align-items:center;justify-content:center;width:1.2em;height:1.2em;margin-top:0;margin-right:0;margin-bottom:-1.2em;padding:0;overflow:hidden;transition:var(--swal2-close-button-transition);border:none;border-radius:var(--swal2-border-radius);outline:var(--swal2-close-button-outline);background:rgba(0,0,0,0);color:var(--swal2-close-button-color);font-family:monospace;font-size:var(--swal2-close-button-font-size);cursor:pointer;justify-self:end}div:where(.swal2-container) button:where(.swal2-close):hover{transform:var(--swal2-close-button-hover-transform);background:rgba(0,0,0,0);color:#f27474}div:where(.swal2-container) button:where(.swal2-close):focus-visible{outline:none;box-shadow:var(--swal2-close-button-focus-box-shadow)}div:where(.swal2-container) button:where(.swal2-close)::-moz-focus-inner{border:0}div:where(.swal2-container) div:where(.swal2-html-container){z-index:1;justify-content:center;margin:0;padding:var(--swal2-html-container-padding);overflow:auto;color:inherit;font-size:1.125em;font-weight:normal;line-height:normal;text-align:center;overflow-wrap:break-word;word-break:break-word;cursor:initial}div:where(.swal2-container) input:where(.swal2-input),div:where(.swal2-container) input:where(.swal2-file),div:where(.swal2-container) textarea:where(.swal2-textarea),div:where(.swal2-container) select:where(.swal2-select),div:where(.swal2-container) div:where(.swal2-radio),div:where(.swal2-container) label:where(.swal2-checkbox){margin:1em 2em 3px}div:where(.swal2-container) input:where(.swal2-input),div:where(.swal2-container) input:where(.swal2-file),div:where(.swal2-container) textarea:where(.swal2-textarea){box-sizing:border-box;width:auto;transition:var(--swal2-input-transition);border:var(--swal2-input-border);border-radius:var(--swal2-input-border-radius);background:var(--swal2-input-background);box-shadow:var(--swal2-input-box-shadow);color:inherit;font-size:1.125em}div:where(.swal2-container) input:where(.swal2-input).swal2-inputerror,div:where(.swal2-container) input:where(.swal2-file).swal2-inputerror,div:where(.swal2-container) textarea:where(.swal2-textarea).swal2-inputerror{border-color:#f27474 !important;box-shadow:0 0 2px #f27474 !important}div:where(.swal2-container) input:where(.swal2-input):hover,div:where(.swal2-container) input:where(.swal2-file):hover,div:where(.swal2-container) textarea:where(.swal2-textarea):hover{box-shadow:var(--swal2-input-hover-box-shadow)}div:where(.swal2-container) input:where(.swal2-input):focus,div:where(.swal2-container) input:where(.swal2-file):focus,div:where(.swal2-container) textarea:where(.swal2-textarea):focus{border:var(--swal2-input-focus-border);outline:none;box-shadow:var(--swal2-input-focus-box-shadow)}div:where(.swal2-container) input:where(.swal2-input)::placeholder,div:where(.swal2-container) input:where(.swal2-file)::placeholder,div:where(.swal2-container) textarea:where(.swal2-textarea)::placeholder{color:#ccc}div:where(.swal2-container) .swal2-range{margin:1em 2em 3px;background:var(--swal2-background)}div:where(.swal2-container) .swal2-range input{width:80%}div:where(.swal2-container) .swal2-range output{width:20%;color:inherit;font-weight:600;text-align:center}div:where(.swal2-container) .swal2-range input,div:where(.swal2-container) .swal2-range output{height:2.625em;padding:0;font-size:1.125em;line-height:2.625em}div:where(.swal2-container) .swal2-input{height:2.625em;padding:0 .75em}div:where(.swal2-container) .swal2-file{width:75%;margin-right:auto;margin-left:auto;background:var(--swal2-input-background);font-size:1.125em}div:where(.swal2-container) .swal2-textarea{height:6.75em;padding:.75em}div:where(.swal2-container) .swal2-select{min-width:50%;max-width:100%;padding:.375em .625em;background:var(--swal2-input-background);color:inherit;font-size:1.125em}div:where(.swal2-container) .swal2-radio,div:where(.swal2-container) .swal2-checkbox{align-items:center;justify-content:center;background:var(--swal2-background);color:inherit}div:where(.swal2-container) .swal2-radio label,div:where(.swal2-container) .swal2-checkbox label{margin:0 .6em;font-size:1.125em}div:where(.swal2-container) .swal2-radio input,div:where(.swal2-container) .swal2-checkbox input{flex-shrink:0;margin:0 .4em}div:where(.swal2-container) label:where(.swal2-input-label){display:flex;justify-content:center;margin:1em auto 0}div:where(.swal2-container) div:where(.swal2-validation-message){align-items:center;justify-content:center;margin:1em 0 0;padding:.625em;overflow:hidden;background:var(--swal2-validation-message-background);color:var(--swal2-validation-message-color);font-size:1em;font-weight:300}div:where(.swal2-container) div:where(.swal2-validation-message)::before{content:"!";display:inline-block;width:1.5em;min-width:1.5em;height:1.5em;margin:0 .625em;border-radius:50%;background-color:#f27474;color:#fff;font-weight:600;line-height:1.5em;text-align:center}div:where(.swal2-container) .swal2-progress-steps{flex-wrap:wrap;align-items:center;max-width:100%;margin:1.25em auto;padding:0;background:rgba(0,0,0,0);font-weight:600}div:where(.swal2-container) .swal2-progress-steps li{display:inline-block;position:relative}div:where(.swal2-container) .swal2-progress-steps .swal2-progress-step{z-index:20;flex-shrink:0;width:2em;height:2em;border-radius:2em;background:#2778c4;color:#fff;line-height:2em;text-align:center}div:where(.swal2-container) .swal2-progress-steps .swal2-progress-step.swal2-active-progress-step{background:#2778c4}div:where(.swal2-container) .swal2-progress-steps .swal2-progress-step.swal2-active-progress-step~.swal2-progress-step{background:var(--swal2-progress-step-background);color:#fff}div:where(.swal2-container) .swal2-progress-steps .swal2-progress-step.swal2-active-progress-step~.swal2-progress-step-line{background:var(--swal2-progress-step-background)}div:where(.swal2-container) .swal2-progress-steps .swal2-progress-step-line{z-index:10;flex-shrink:0;width:2.5em;height:.4em;margin:0 -1px;background:#2778c4}div:where(.swal2-icon){position:relative;box-sizing:content-box;justify-content:center;width:5em;height:5em;margin:2.5em auto .6em;zoom:var(--swal2-icon-zoom);border:.25em solid rgba(0,0,0,0);border-radius:50%;border-color:#000;font-family:inherit;line-height:5em;cursor:default;user-select:none}div:where(.swal2-icon) .swal2-icon-content{display:flex;align-items:center;font-size:3.75em}div:where(.swal2-icon).swal2-error{border-color:#f27474;color:#f27474}div:where(.swal2-icon).swal2-error .swal2-x-mark{position:relative;flex-grow:1}div:where(.swal2-icon).swal2-error [class^=swal2-x-mark-line]{display:block;position:absolute;top:2.3125em;width:2.9375em;height:.3125em;border-radius:.125em;background-color:#f27474}div:where(.swal2-icon).swal2-error [class^=swal2-x-mark-line][class$=left]{left:1.0625em;transform:rotate(45deg)}div:where(.swal2-icon).swal2-error [class^=swal2-x-mark-line][class$=right]{right:1em;transform:rotate(-45deg)}@container swal2-popup style(--swal2-icon-animations:true){div:where(.swal2-icon).swal2-error.swal2-icon-show{animation:swal2-animate-error-icon .5s}div:where(.swal2-icon).swal2-error.swal2-icon-show .swal2-x-mark{animation:swal2-animate-error-x-mark .5s}}div:where(.swal2-icon).swal2-warning{border-color:#f8bb86;color:#f8bb86}@container swal2-popup style(--swal2-icon-animations:true){div:where(.swal2-icon).swal2-warning.swal2-icon-show{animation:swal2-animate-error-icon .5s}div:where(.swal2-icon).swal2-warning.swal2-icon-show .swal2-icon-content{animation:swal2-animate-i-mark .5s}}div:where(.swal2-icon).swal2-info{border-color:#3fc3ee;color:#3fc3ee}@container swal2-popup style(--swal2-icon-animations:true){div:where(.swal2-icon).swal2-info.swal2-icon-show{animation:swal2-animate-error-icon .5s}div:where(.swal2-icon).swal2-info.swal2-icon-show .swal2-icon-content{animation:swal2-animate-i-mark .8s}}div:where(.swal2-icon).swal2-question{border-color:#87adbd;color:#87adbd}@container swal2-popup style(--swal2-icon-animations:true){div:where(.swal2-icon).swal2-question.swal2-icon-show{animation:swal2-animate-error-icon .5s}div:where(.swal2-icon).swal2-question.swal2-icon-show .swal2-icon-content{animation:swal2-animate-question-mark .8s}}div:where(.swal2-icon).swal2-success{border-color:#a5dc86;color:#a5dc86}div:where(.swal2-icon).swal2-success [class^=swal2-success-circular-line]{position:absolute;width:3.75em;height:7.5em;border-radius:50%}div:where(.swal2-icon).swal2-success [class^=swal2-success-circular-line][class$=left]{top:-0.4375em;left:-2.0635em;transform:rotate(-45deg);transform-origin:3.75em 3.75em;border-radius:7.5em 0 0 7.5em}div:where(.swal2-icon).swal2-success [class^=swal2-success-circular-line][class$=right]{top:-0.6875em;left:1.875em;transform:rotate(-45deg);transform-origin:0 3.75em;border-radius:0 7.5em 7.5em 0}div:where(.swal2-icon).swal2-success .swal2-success-ring{position:absolute;z-index:2;top:-0.25em;left:-0.25em;box-sizing:content-box;width:100%;height:100%;border:.25em solid rgba(165,220,134,.3);border-radius:50%}div:where(.swal2-icon).swal2-success .swal2-success-fix{position:absolute;z-index:1;top:.5em;left:1.625em;width:.4375em;height:5.625em;transform:rotate(-45deg)}div:where(.swal2-icon).swal2-success [class^=swal2-success-line]{display:block;position:absolute;z-index:2;height:.3125em;border-radius:.125em;background-color:#a5dc86}div:where(.swal2-icon).swal2-success [class^=swal2-success-line][class$=tip]{top:2.875em;left:.8125em;width:1.5625em;transform:rotate(45deg)}div:where(.swal2-icon).swal2-success [class^=swal2-success-line][class$=long]{top:2.375em;right:.5em;width:2.9375em;transform:rotate(-45deg)}@container swal2-popup style(--swal2-icon-animations:true){div:where(.swal2-icon).swal2-success.swal2-icon-show .swal2-success-line-tip{animation:swal2-animate-success-line-tip .75s}div:where(.swal2-icon).swal2-success.swal2-icon-show .swal2-success-line-long{animation:swal2-animate-success-line-long .75s}div:where(.swal2-icon).swal2-success.swal2-icon-show .swal2-success-circular-line-right{animation:swal2-rotate-success-circular-line 4.25s ease-in}}[class^=swal2]{-webkit-tap-highlight-color:rgba(0,0,0,0)}.swal2-show{animation:var(--swal2-show-animation)}.swal2-hide{animation:var(--swal2-hide-animation)}.swal2-noanimation{transition:none}.swal2-scrollbar-measure{position:absolute;top:-9999px;width:50px;height:50px;overflow:scroll}.swal2-rtl .swal2-close{margin-right:initial;margin-left:0}.swal2-rtl .swal2-timer-progress-bar{right:0;left:auto}.swal2-toast{box-sizing:border-box;grid-column:1/4 !important;grid-row:1/4 !important;grid-template-columns:min-content auto min-content;padding:1em;overflow-y:hidden;border:var(--swal2-toast-border);background:var(--swal2-background);box-shadow:var(--swal2-toast-box-shadow);pointer-events:all}.swal2-toast>*{grid-column:2}.swal2-toast h2:where(.swal2-title){margin:.5em 1em;padding:0;font-size:1em;text-align:initial}.swal2-toast .swal2-loading{justify-content:center}.swal2-toast input:where(.swal2-input){height:2em;margin:.5em;font-size:1em}.swal2-toast .swal2-validation-message{font-size:1em}.swal2-toast div:where(.swal2-footer){margin:.5em 0 0;padding:.5em 0 0;font-size:.8em}.swal2-toast button:where(.swal2-close){grid-column:3/3;grid-row:1/99;align-self:center;width:.8em;height:.8em;margin:0;font-size:2em}.swal2-toast div:where(.swal2-html-container){margin:.5em 1em;padding:0;overflow:initial;font-size:1em;text-align:initial}.swal2-toast div:where(.swal2-html-container):empty{padding:0}.swal2-toast .swal2-loader{grid-column:1;grid-row:1/99;align-self:center;width:2em;height:2em;margin:.25em}.swal2-toast .swal2-icon{grid-column:1;grid-row:1/99;align-self:center;width:2em;min-width:2em;height:2em;margin:0 .5em 0 0}.swal2-toast .swal2-icon .swal2-icon-content{display:flex;align-items:center;font-size:1.8em;font-weight:bold}.swal2-toast .swal2-icon.swal2-success .swal2-success-ring{width:2em;height:2em}.swal2-toast .swal2-icon.swal2-error [class^=swal2-x-mark-line]{top:.875em;width:1.375em}.swal2-toast .swal2-icon.swal2-error [class^=swal2-x-mark-line][class$=left]{left:.3125em}.swal2-toast .swal2-icon.swal2-error [class^=swal2-x-mark-line][class$=right]{right:.3125em}.swal2-toast div:where(.swal2-actions){justify-content:flex-start;height:auto;margin:0;margin-top:.5em;padding:0 .5em}.swal2-toast button:where(.swal2-styled){margin:.25em .5em;padding:.4em .6em;font-size:1em}.swal2-toast .swal2-success{border-color:#a5dc86}.swal2-toast .swal2-success [class^=swal2-success-circular-line]{position:absolute;width:1.6em;height:3em;border-radius:50%}.swal2-toast .swal2-success [class^=swal2-success-circular-line][class$=left]{top:-0.8em;left:-0.5em;transform:rotate(-45deg);transform-origin:2em 2em;border-radius:4em 0 0 4em}.swal2-toast .swal2-success [class^=swal2-success-circular-line][class$=right]{top:-0.25em;left:.9375em;transform-origin:0 1.5em;border-radius:0 4em 4em 0}.swal2-toast .swal2-success .swal2-success-ring{width:2em;height:2em}.swal2-toast .swal2-success .swal2-success-fix{top:0;left:.4375em;width:.4375em;height:2.6875em}.swal2-toast .swal2-success [class^=swal2-success-line]{height:.3125em}.swal2-toast .swal2-success [class^=swal2-success-line][class$=tip]{top:1.125em;left:.1875em;width:.75em}.swal2-toast .swal2-success [class^=swal2-success-line][class$=long]{top:.9375em;right:.1875em;width:1.375em}@container swal2-popup style(--swal2-icon-animations:true){.swal2-toast .swal2-success.swal2-icon-show .swal2-success-line-tip{animation:swal2-toast-animate-success-line-tip .75s}.swal2-toast .swal2-success.swal2-icon-show .swal2-success-line-long{animation:swal2-toast-animate-success-line-long .75s}}.swal2-toast.swal2-show{animation:var(--swal2-toast-show-animation)}.swal2-toast.swal2-hide{animation:var(--swal2-toast-hide-animation)}@keyframes swal2-show{0%{transform:translate3d(0, -50px, 0) scale(0.9);opacity:0}100%{transform:translate3d(0, 0, 0) scale(1);opacity:1}}@keyframes swal2-hide{0%{transform:translate3d(0, 0, 0) scale(1);opacity:1}100%{transform:translate3d(0, -50px, 0) scale(0.9);opacity:0}}@keyframes swal2-animate-success-line-tip{0%{top:1.1875em;left:.0625em;width:0}54%{top:1.0625em;left:.125em;width:0}70%{top:2.1875em;left:-0.375em;width:3.125em}84%{top:3em;left:1.3125em;width:1.0625em}100%{top:2.8125em;left:.8125em;width:1.5625em}}@keyframes swal2-animate-success-line-long{0%{top:3.375em;right:2.875em;width:0}65%{top:3.375em;right:2.875em;width:0}84%{top:2.1875em;right:0;width:3.4375em}100%{top:2.375em;right:.5em;width:2.9375em}}@keyframes swal2-rotate-success-circular-line{0%{transform:rotate(-45deg)}5%{transform:rotate(-45deg)}12%{transform:rotate(-405deg)}100%{transform:rotate(-405deg)}}@keyframes swal2-animate-error-x-mark{0%{margin-top:1.625em;transform:scale(0.4);opacity:0}50%{margin-top:1.625em;transform:scale(0.4);opacity:0}80%{margin-top:-0.375em;transform:scale(1.15)}100%{margin-top:0;transform:scale(1);opacity:1}}@keyframes swal2-animate-error-icon{0%{transform:rotateX(100deg);opacity:0}100%{transform:rotateX(0deg);opacity:1}}@keyframes swal2-rotate-loading{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}@keyframes swal2-animate-question-mark{0%{transform:rotateY(-360deg)}100%{transform:rotateY(0)}}@keyframes swal2-animate-i-mark{0%{transform:rotateZ(45deg);opacity:0}25%{transform:rotateZ(-25deg);opacity:.4}50%{transform:rotateZ(15deg);opacity:.8}75%{transform:rotateZ(-5deg);opacity:1}100%{transform:rotateX(0);opacity:1}}@keyframes swal2-toast-show{0%{transform:translateY(-0.625em) rotateZ(2deg)}33%{transform:translateY(0) rotateZ(-2deg)}66%{transform:translateY(0.3125em) rotateZ(2deg)}100%{transform:translateY(0) rotateZ(0deg)}}@keyframes swal2-toast-hide{100%{transform:rotateZ(1deg);opacity:0}}@keyframes swal2-toast-animate-success-line-tip{0%{top:.5625em;left:.0625em;width:0}54%{top:.125em;left:.125em;width:0}70%{top:.625em;left:-0.25em;width:1.625em}84%{top:1.0625em;left:.75em;width:.5em}100%{top:1.125em;left:.1875em;width:.75em}}@keyframes swal2-toast-animate-success-line-long{0%{top:1.625em;right:1.375em;width:0}65%{top:1.25em;right:.9375em;width:0}84%{top:.9375em;right:0;width:1.125em}100%{top:.9375em;right:.1875em;width:1.375em}}
+</style><style id="VMst0.41393447374320547">
+            .swal2-container { z-index: 2147483647 !important; }
+            .swal2-popup { font-size: 14px !important; }
+            /* 移动端输入框适配 */
+            @media (max-width: 640px) {
+                .tts-config-row input { font-size: 12px !important; padding: 5px !important; }
+            }
+        </style><style id="VMst0.2528780054569675">
+        .tts-highlight-marker {
+            background-color: #ffeb3b !important;
+            color: #000 !important;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(255, 235, 59, 0.6);
+            padding: 2px 0;
+            transition: background-color 0.1s;
+        }
+        @media (prefers-color-scheme: dark) {
+            .tts-highlight-marker { background-color: #fdd835 !important; color: #000 !important; }
+        }
+    </style><style id="relin-highlight">relin-hc relin-highlight[data-relin-meta^="starred"]:not([data-relin-mastered])[data-relin-vocabularies*="68f65b6976aa0ba4dad39330"] relin-origin {
+          color: #d3cf15!important;
+          opacity: 0.85;
+          transition: all 0.3s ease;
+          text-shadow: 0 0 0.5px rgba(0,0,0,0.1);
+        }
+        relin-hc relin-highlight.relingo-underline[data-relin-meta^="starred"]:not([data-relin-mastered])[data-relin-vocabularies*="68f65b6976aa0ba4dad39330"] relin-origin {
+          color: inherit !important;
+          border-bottom: 1.5px dashed #d3cf15!important;
+          transition: all 0.2s ease;
+          padding-bottom: 1px;
+        }
+        relin-hc relin-highlight.relingo-underline-annotated[data-relin-meta^="starred"]:not([data-relin-mastered])[data-relin-vocabularies*="68f65b6976aa0ba4dad39330"] relin-origin {
+          color: inherit !important;
+          background: linear-gradient(to bottom, transparent 60%, #d3cf1540 30%);
+          border-bottom: none !important;
+          transition: all 0.2s ease;
+        }
+        
+relin-hc relin-highlight[data-relin-meta^="starred"]:not([data-relin-mastered])[data-relin-vocabularies*="664f0e1bc53fae9411326fa1"] relin-origin {
+          color: #f4493f!important;
+          opacity: 0.85;
+          transition: all 0.3s ease;
+          text-shadow: 0 0 0.5px rgba(0,0,0,0.1);
+        }
+        relin-hc relin-highlight.relingo-underline[data-relin-meta^="starred"]:not([data-relin-mastered])[data-relin-vocabularies*="664f0e1bc53fae9411326fa1"] relin-origin {
+          color: inherit !important;
+          border-bottom: 1.5px dashed #f4493f!important;
+          transition: all 0.2s ease;
+          padding-bottom: 1px;
+        }
+        relin-hc relin-highlight.relingo-underline-annotated[data-relin-meta^="starred"]:not([data-relin-mastered])[data-relin-vocabularies*="664f0e1bc53fae9411326fa1"] relin-origin {
+          color: inherit !important;
+          background: linear-gradient(to bottom, transparent 60%, #f4493f40 30%);
+          border-bottom: none !important;
+          transition: all 0.2s ease;
+        }
+        
+relin-hc relin-highlight[data-relin-meta^="starred"]:not([data-relin-mastered])[data-relin-vocabularies*="6679c0ee12643b3f0e27a3b6"] relin-origin {
+          color: #0085cf!important;
+          opacity: 0.85;
+          transition: all 0.3s ease;
+          text-shadow: 0 0 0.5px rgba(0,0,0,0.1);
+        }
+        relin-hc relin-highlight.relingo-underline[data-relin-meta^="starred"]:not([data-relin-mastered])[data-relin-vocabularies*="6679c0ee12643b3f0e27a3b6"] relin-origin {
+          color: inherit !important;
+          border-bottom: 1.5px dashed #0085cf!important;
+          transition: all 0.2s ease;
+          padding-bottom: 1px;
+        }
+        relin-hc relin-highlight.relingo-underline-annotated[data-relin-meta^="starred"]:not([data-relin-mastered])[data-relin-vocabularies*="6679c0ee12643b3f0e27a3b6"] relin-origin {
+          color: inherit !important;
+          background: linear-gradient(to bottom, transparent 60%, #0085cf40 30%);
+          border-bottom: none !important;
+          transition: all 0.2s ease;
+        }
+        relin-highlight relin-origin ruby rt {
+        font-size: 12px;
+      }
+    .relin-ftt-target[data-mode="dual"] {
+      opacity: 1!important;
+    }
+    relin-hc relin-highlight relin-target {
+      opacity: 1!important;
+    }
+  
+    .relin-ftt-target .relin-ftt-target-inner {
+      font-size: 90%;
+    }
+  relin-hc relin-highlight.relingo-pos-NOUN.relingo-pos-highlight relin-origin {
+          color: #f33076!important;
+          opacity: 0.85;
+          transition: all 0.2s ease;
+          text-shadow: 0 0 0.5px rgba(0,0,0,0.1);
+        }
+        relin-hc relin-highlight.relingo-pos-NOUN.relingo-pos-underline relin-origin {
+          background: linear-gradient(to bottom, transparent 60%, #f3307640 30%);
+          border-bottom: none !important;
+          transition: all 0.2s ease;
+        }
+        relin-hc relin-highlight.relingo-pos-NOUN.relingo-pos-mark {
+          position: relative;
+        }
+        relin-hc relin-highlight.relingo-pos-NOUN.relingo-pos-mark relin-origin {
+          border-bottom: none !important;
+          background: linear-gradient(120deg,
+            rgba(243, 48, 118, 0) 0%,
+            rgba(243, 48, 118, 0.03) 10%,
+            rgba(243, 48, 118, 0.10) 20%,
+            rgba(243, 48, 118, 0.14) 30%,
+            rgba(243, 48, 118, 0.14) 70%,
+            rgba(243, 48, 118, 0.10) 80%,
+            rgba(243, 48, 118, 0.03) 90%,
+            rgba(243, 48, 118, 0) 100%) !important;
+          box-shadow: 0 0 1px rgba(243, 48, 118, 0.05);
+          transition: all 0.3s ease;
+        }
+        relin-hc relin-highlight.relingo-pos-NOUN.relingo-pos-mark::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: inherit;
+          z-index: -1;
+          transform: skewX(-3deg);
+          transition: inherit;
+        }
+        relin-hc relin-highlight.relingo-pos-NOUN.relingo-pos-mark:hover relin-origin {
+          background: linear-gradient(120deg,
+            rgba(243, 48, 118, 0) 0%,
+            rgba(243, 48, 118, 0.06) 10%,
+            rgba(243, 48, 118, 0.15) 20%,
+            rgba(243, 48, 118, 0.20) 30%,
+            rgba(243, 48, 118, 0.20) 70%,
+            rgba(243, 48, 118, 0.15) 80%,
+            rgba(243, 48, 118, 0.06) 90%,
+            rgba(243, 48, 118, 0) 100%) !important;
+        }
+        .relingo-caption relin-hc relin-highlight.relingo-pos-NOUN.relingo-pos-mark relin-origin {
+          background: linear-gradient(120deg,
+            rgba(243, 48, 118, 0) 0%,
+            rgba(243, 48, 118, 0.40) 10%,
+            rgba(243, 48, 118, 0.50) 20%,
+            rgba(243, 48, 118, 0.60) 30%,
+            rgba(243, 48, 118, 0.60) 70%,
+            rgba(243, 48, 118, 0.50) 80%,
+            rgba(243, 48, 118, 0.40) 90%,
+            rgba(243, 48, 118, 0) 100%) !important;
+        }
+        .relingo-caption relin-hc relin-highlight.relingo-pos-NOUN.relingo-pos-underline relin-origin {
+          background: linear-gradient(to bottom, transparent 60%, rgba(243, 48, 118, 0.8) 75%);
+        }
+        relin-hc relin-highlight.relingo-pos-VERB.relingo-pos-highlight relin-origin {
+          color: #7555ce!important;
+          opacity: 0.85;
+          transition: all 0.2s ease;
+          text-shadow: 0 0 0.5px rgba(0,0,0,0.1);
+        }
+        relin-hc relin-highlight.relingo-pos-VERB.relingo-pos-underline relin-origin {
+          background: linear-gradient(to bottom, transparent 60%, #7555ce40 30%);
+          border-bottom: none !important;
+          transition: all 0.2s ease;
+        }
+        relin-hc relin-highlight.relingo-pos-VERB.relingo-pos-mark {
+          position: relative;
+        }
+        relin-hc relin-highlight.relingo-pos-VERB.relingo-pos-mark relin-origin {
+          border-bottom: none !important;
+          background: linear-gradient(120deg,
+            rgba(117, 85, 206, 0) 0%,
+            rgba(117, 85, 206, 0.03) 10%,
+            rgba(117, 85, 206, 0.10) 20%,
+            rgba(117, 85, 206, 0.14) 30%,
+            rgba(117, 85, 206, 0.14) 70%,
+            rgba(117, 85, 206, 0.10) 80%,
+            rgba(117, 85, 206, 0.03) 90%,
+            rgba(117, 85, 206, 0) 100%) !important;
+          box-shadow: 0 0 1px rgba(117, 85, 206, 0.05);
+          transition: all 0.3s ease;
+        }
+        relin-hc relin-highlight.relingo-pos-VERB.relingo-pos-mark::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: inherit;
+          z-index: -1;
+          transform: skewX(-3deg);
+          transition: inherit;
+        }
+        relin-hc relin-highlight.relingo-pos-VERB.relingo-pos-mark:hover relin-origin {
+          background: linear-gradient(120deg,
+            rgba(117, 85, 206, 0) 0%,
+            rgba(117, 85, 206, 0.06) 10%,
+            rgba(117, 85, 206, 0.15) 20%,
+            rgba(117, 85, 206, 0.20) 30%,
+            rgba(117, 85, 206, 0.20) 70%,
+            rgba(117, 85, 206, 0.15) 80%,
+            rgba(117, 85, 206, 0.06) 90%,
+            rgba(117, 85, 206, 0) 100%) !important;
+        }
+        .relingo-caption relin-hc relin-highlight.relingo-pos-VERB.relingo-pos-mark relin-origin {
+          background: linear-gradient(120deg,
+            rgba(117, 85, 206, 0) 0%,
+            rgba(117, 85, 206, 0.40) 10%,
+            rgba(117, 85, 206, 0.50) 20%,
+            rgba(117, 85, 206, 0.60) 30%,
+            rgba(117, 85, 206, 0.60) 70%,
+            rgba(117, 85, 206, 0.50) 80%,
+            rgba(117, 85, 206, 0.40) 90%,
+            rgba(117, 85, 206, 0) 100%) !important;
+        }
+        .relingo-caption relin-hc relin-highlight.relingo-pos-VERB.relingo-pos-underline relin-origin {
+          background: linear-gradient(to bottom, transparent 60%, rgba(117, 85, 206, 0.8) 75%);
+        }
+        relin-hc relin-highlight.relingo-pos-ADJ.relingo-pos-highlight relin-origin {
+          color: #34a4ab!important;
+          opacity: 0.85;
+          transition: all 0.2s ease;
+          text-shadow: 0 0 0.5px rgba(0,0,0,0.1);
+        }
+        relin-hc relin-highlight.relingo-pos-ADJ.relingo-pos-underline relin-origin {
+          background: linear-gradient(to bottom, transparent 60%, #34a4ab40 30%);
+          border-bottom: none !important;
+          transition: all 0.2s ease;
+        }
+        relin-hc relin-highlight.relingo-pos-ADJ.relingo-pos-mark {
+          position: relative;
+        }
+        relin-hc relin-highlight.relingo-pos-ADJ.relingo-pos-mark relin-origin {
+          border-bottom: none !important;
+          background: linear-gradient(120deg,
+            rgba(52, 164, 171, 0) 0%,
+            rgba(52, 164, 171, 0.03) 10%,
+            rgba(52, 164, 171, 0.10) 20%,
+            rgba(52, 164, 171, 0.14) 30%,
+            rgba(52, 164, 171, 0.14) 70%,
+            rgba(52, 164, 171, 0.10) 80%,
+            rgba(52, 164, 171, 0.03) 90%,
+            rgba(52, 164, 171, 0) 100%) !important;
+          box-shadow: 0 0 1px rgba(52, 164, 171, 0.05);
+          transition: all 0.3s ease;
+        }
+        relin-hc relin-highlight.relingo-pos-ADJ.relingo-pos-mark::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: inherit;
+          z-index: -1;
+          transform: skewX(-3deg);
+          transition: inherit;
+        }
+        relin-hc relin-highlight.relingo-pos-ADJ.relingo-pos-mark:hover relin-origin {
+          background: linear-gradient(120deg,
+            rgba(52, 164, 171, 0) 0%,
+            rgba(52, 164, 171, 0.06) 10%,
+            rgba(52, 164, 171, 0.15) 20%,
+            rgba(52, 164, 171, 0.20) 30%,
+            rgba(52, 164, 171, 0.20) 70%,
+            rgba(52, 164, 171, 0.15) 80%,
+            rgba(52, 164, 171, 0.06) 90%,
+            rgba(52, 164, 171, 0) 100%) !important;
+        }
+        .relingo-caption relin-hc relin-highlight.relingo-pos-ADJ.relingo-pos-mark relin-origin {
+          background: linear-gradient(120deg,
+            rgba(52, 164, 171, 0) 0%,
+            rgba(52, 164, 171, 0.40) 10%,
+            rgba(52, 164, 171, 0.50) 20%,
+            rgba(52, 164, 171, 0.60) 30%,
+            rgba(52, 164, 171, 0.60) 70%,
+            rgba(52, 164, 171, 0.50) 80%,
+            rgba(52, 164, 171, 0.40) 90%,
+            rgba(52, 164, 171, 0) 100%) !important;
+        }
+        .relingo-caption relin-hc relin-highlight.relingo-pos-ADJ.relingo-pos-underline relin-origin {
+          background: linear-gradient(to bottom, transparent 60%, rgba(52, 164, 171, 0.8) 75%);
+        }
+        relin-hc relin-highlight.relingo-pos-ADV.relingo-pos-highlight relin-origin {
+          color: #5cb206!important;
+          opacity: 0.85;
+          transition: all 0.2s ease;
+          text-shadow: 0 0 0.5px rgba(0,0,0,0.1);
+        }
+        relin-hc relin-highlight.relingo-pos-ADV.relingo-pos-underline relin-origin {
+          background: linear-gradient(to bottom, transparent 60%, #5cb20640 30%);
+          border-bottom: none !important;
+          transition: all 0.2s ease;
+        }
+        relin-hc relin-highlight.relingo-pos-ADV.relingo-pos-mark {
+          position: relative;
+        }
+        relin-hc relin-highlight.relingo-pos-ADV.relingo-pos-mark relin-origin {
+          border-bottom: none !important;
+          background: linear-gradient(120deg,
+            rgba(92, 178, 6, 0) 0%,
+            rgba(92, 178, 6, 0.03) 10%,
+            rgba(92, 178, 6, 0.10) 20%,
+            rgba(92, 178, 6, 0.14) 30%,
+            rgba(92, 178, 6, 0.14) 70%,
+            rgba(92, 178, 6, 0.10) 80%,
+            rgba(92, 178, 6, 0.03) 90%,
+            rgba(92, 178, 6, 0) 100%) !important;
+          box-shadow: 0 0 1px rgba(92, 178, 6, 0.05);
+          transition: all 0.3s ease;
+        }
+        relin-hc relin-highlight.relingo-pos-ADV.relingo-pos-mark::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: inherit;
+          z-index: -1;
+          transform: skewX(-3deg);
+          transition: inherit;
+        }
+        relin-hc relin-highlight.relingo-pos-ADV.relingo-pos-mark:hover relin-origin {
+          background: linear-gradient(120deg,
+            rgba(92, 178, 6, 0) 0%,
+            rgba(92, 178, 6, 0.06) 10%,
+            rgba(92, 178, 6, 0.15) 20%,
+            rgba(92, 178, 6, 0.20) 30%,
+            rgba(92, 178, 6, 0.20) 70%,
+            rgba(92, 178, 6, 0.15) 80%,
+            rgba(92, 178, 6, 0.06) 90%,
+            rgba(92, 178, 6, 0) 100%) !important;
+        }
+        .relingo-caption relin-hc relin-highlight.relingo-pos-ADV.relingo-pos-mark relin-origin {
+          background: linear-gradient(120deg,
+            rgba(92, 178, 6, 0) 0%,
+            rgba(92, 178, 6, 0.40) 10%,
+            rgba(92, 178, 6, 0.50) 20%,
+            rgba(92, 178, 6, 0.60) 30%,
+            rgba(92, 178, 6, 0.60) 70%,
+            rgba(92, 178, 6, 0.50) 80%,
+            rgba(92, 178, 6, 0.40) 90%,
+            rgba(92, 178, 6, 0) 100%) !important;
+        }
+        .relingo-caption relin-hc relin-highlight.relingo-pos-ADV.relingo-pos-underline relin-origin {
+          background: linear-gradient(to bottom, transparent 60%, rgba(92, 178, 6, 0.8) 75%);
+        }
+        </style></head>
+<body class="">
+    <div class="nav-back" data-relin-paragraph="2"><a href="../../index.html" data-relin-paragraph="1">🔙 返回学习日历</a></div>
     <div class="container">
         <div class="header">
-            <h1>Daily Five Words</h1>
-            <p>📝 2026-06-27 · 进阶词汇集训</p>
+            <h1 data-relingo-block="true" data-relin-paragraph="3"><relin-hc data-id="1"><relin-highlight data-relin-mastered="" data-relin-meta="unstarred-5" data-relin-vocabularies=""><relin-origin>Daily</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-5" data-relin-vocabularies=""><relin-origin>Five</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-0" data-relin-vocabularies=""><relin-origin>Words</relin-origin></relin-highlight></relin-hc></h1>
+            <p data-tts="1" data-relingo-block="true" data-relin-paragraph="4">📝 2026-06-27 · 进阶词汇集训<span class="para-read-btn" title="朗读此段"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></span></p>
         </div>
         
         <div class="word-card">
             <div class="word-header" onclick="toggleCard(0)" title="点击展开/折叠">
                 <div class="header-left">
-                    <span class="word-index">#1</span>
-                    <h2 class="word-title editable-node">ashtray</h2>
+                    <span class="word-index" data-relingo-block="true" data-relin-paragraph="5">#1</span>
+                    <h2 class="word-title editable-node" data-relingo-block="true" data-relin-paragraph="6"><relin-hc data-id="2"><relin-highlight data-relin-meta="starred-2" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6 68f65b6976aa0ba4dad39330" class="relingo-highlight"><relin-origin>ashtray</relin-origin></relin-highlight></relin-hc></h2>
                 </div>
-                <div class="header-right" id="arrow-0">▼</div>
+                <div class="header-right" id="arrow-0" style="transform: rotate(180deg);" data-relingo-block="true">▼</div>
             </div>
             
-            <div id="content-0" class="word-content" style="display: none;">
+            <div id="content-0" class="word-content" style="display: block;">
                 <div class="definition-box">
-                    <div class="def-zh editable-node">n. 烟灰缸</div>
-                    <div class="def-en editable-node">A receptacle for ash and butts from cigarettes and cigars.</div>
+                    <div class="def-zh editable-node" data-relingo-block="true" data-relin-paragraph="7">n. 烟灰缸</div>
+                    <div class="def-en editable-node" data-relingo-block="true" data-relin-paragraph="8"><relin-hc data-id="3"><relin-highlight data-relin-mastered="" data-relin-meta="unstarred-0" data-relin-vocabularies=""><relin-origin>A</relin-origin></relin-highlight> <relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>receptacle</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-5" data-relin-vocabularies=""><relin-origin>for</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-4" data-relin-vocabularies=""><relin-origin>ash</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="starred-5" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6"><relin-origin>and</relin-origin></relin-highlight> <relin-highlight data-relin-meta="starred-0" data-relin-vocabularies="" class="relingo-highlight"><relin-origin>butts</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-5" data-relin-vocabularies=""><relin-origin>from</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-0" data-relin-vocabularies=""><relin-origin>cigarettes</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="starred-5" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6"><relin-origin>and</relin-origin></relin-highlight> <relin-highlight data-relin-meta="starred-0" data-relin-vocabularies="" class="relingo-highlight"><relin-origin>cigars</relin-origin></relin-highlight>.</relin-hc></div>
                 </div>
                 
-                <div class="meta-card exp-box"><span class="meta-label">📚 讲解与辨析 (Explanation)</span><ul class="vertical-list exp-list"><li class='editable-node'>💡 <span class='trans-zh'>该词含义较单一，多在固定搭配中直接使用。</span></li></ul></div>
+                <div class="meta-card exp-box"><span class="meta-label" data-relingo-block="true" data-relin-paragraph="9"><relin-hc data-id="4">📚 讲解与辨析 (<relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>Explanation</relin-origin></relin-highlight>)</relin-hc></span><ul class="vertical-list exp-list"><li class="editable-node" data-relingo-block="true" data-relin-paragraph="10">💡 <span class="trans-zh">该词含义较单一，多在固定搭配中直接使用。</span></li></ul></div>
                 
                 
-                <div class="meta-card collocations-box"><span class="meta-label">🔗 常见搭配 (Collocations)</span><ul class="vertical-list"><li class="editable-node"><span class="en-word">Dirty Ashtray Award</span> <span class="trans-zh">(脏烟灰缸奖)</span></li><li class="editable-node"><span class="en-word">STAND ASHTRAY</span> <span class="trans-zh">(立式烟灰缸)</span></li><li class="editable-node"><span class="en-word">twin-fish ashtray</span> <span class="trans-zh">(双鱼烟缸)</span></li><li class="editable-node"><span class="en-word">glass ashtray</span> <span class="trans-zh">(玻璃烟灰缸)</span></li><li class="editable-node"><span class="en-word">Serving as ashtray</span> <span class="trans-zh">(作为烟灰缸服伺)</span></li></ul></div>
+                <div class="meta-card collocations-box"><span class="meta-label" data-relingo-block="true" data-relin-paragraph="11"><relin-hc data-id="5">🔗 常见搭配 (<relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>Collocations</relin-origin></relin-highlight>)</relin-hc></span><ul class="vertical-list"><li class="editable-node" data-relingo-block="true" data-relin-paragraph="12"><span class="en-word"><relin-hc data-id="6"><relin-highlight data-relin-mastered="" data-relin-meta="unstarred-4" data-relin-vocabularies=""><relin-origin>Dirty</relin-origin></relin-highlight> <relin-highlight data-relin-meta="starred-2" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6 68f65b6976aa0ba4dad39330" class="relingo-highlight"><relin-origin>Ashtray</relin-origin></relin-highlight> <relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>Award</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(脏烟灰缸奖)</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="13"><span class="en-word"><relin-hc data-id="7"><relin-highlight data-relin-mastered="" data-relin-meta="unstarred-5" data-relin-vocabularies=""><relin-origin>STAND</relin-origin></relin-highlight> <relin-highlight data-relin-meta="starred-2" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6 68f65b6976aa0ba4dad39330" class="relingo-highlight"><relin-origin>ASHTRAY</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(立式烟灰缸)</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="14"><span class="en-word"><relin-hc data-id="8"><relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>twin</relin-origin></relin-highlight>-<relin-highlight data-relin-mastered="" data-relin-meta="unstarred-5" data-relin-vocabularies=""><relin-origin>fish</relin-origin></relin-highlight> <relin-highlight data-relin-meta="starred-2" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6 68f65b6976aa0ba4dad39330" class="relingo-highlight"><relin-origin>ashtray</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(双鱼烟缸)</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="15"><span class="en-word"><relin-hc data-id="9"><relin-highlight data-relin-mastered="" data-relin-meta="unstarred-5" data-relin-vocabularies=""><relin-origin>glass</relin-origin></relin-highlight> <relin-highlight data-relin-meta="starred-2" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6 68f65b6976aa0ba4dad39330" class="relingo-highlight"><relin-origin>ashtray</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(玻璃烟灰缸)</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="16"><span class="en-word"><relin-hc data-id="10"><relin-highlight data-relin-mastered="" data-relin-meta="starred-0" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6"><relin-origin>Serving</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="starred-5" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6"><relin-origin>as</relin-origin></relin-highlight> <relin-highlight data-relin-meta="starred-2" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6 68f65b6976aa0ba4dad39330" class="relingo-highlight"><relin-origin>ashtray</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(作为烟灰缸服伺)</span></li></ul></div>
                 
                 
         <div class="meta-card notes-box" style="margin-top: 15px; background: #fafafa; border: 1px dashed #dcdde1;">
-            <span class="meta-label">📝 备注 (Notes)</span>
-            <div class="editable-node" style="min-height: 40px; color: #555; outline: none;">在此输入备注...</div>
+            <span class="meta-label" data-relingo-block="true" data-relin-paragraph="17">📝 备注 (Notes)</span>
+            <div class="editable-node" style="min-height: 40px; color: #555; outline: none;" data-relingo-block="true" data-relin-paragraph="18">在此输入备注...</div>
         </div>
         
             </div>
@@ -112,27 +679,27 @@
         <div class="word-card">
             <div class="word-header" onclick="toggleCard(1)" title="点击展开/折叠">
                 <div class="header-left">
-                    <span class="word-index">#2</span>
-                    <h2 class="word-title editable-node">maestro</h2>
+                    <span class="word-index" data-relingo-block="true" data-relin-paragraph="19">#2</span>
+                    <h2 class="word-title editable-node" data-relingo-block="true" data-relin-paragraph="20"><relin-hc data-id="11"><relin-highlight data-relin-meta="starred-1" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>maestro</relin-origin></relin-highlight></relin-hc></h2>
                 </div>
-                <div class="header-right" id="arrow-1">▼</div>
+                <div class="header-right" id="arrow-1" data-relingo-block="true" style="transform: rotate(180deg);">▼</div>
             </div>
             
-            <div id="content-1" class="word-content" style="display: none;">
+            <div id="content-1" class="word-content" style="display: block;">
                 <div class="definition-box">
-                    <div class="def-zh editable-node">n. 大师；名家；大音乐家；n. （Maestro）人名；（意、西）马埃斯特罗</div>
-                    <div class="def-en editable-node">A master in some art, especially a composer or conductor.</div>
+                    <div class="def-zh editable-node" data-relingo-block="true" data-relin-paragraph="35">n. 大师；名家；大音乐家；n. （Maestro）人名；（意、西）马埃斯特罗</div>
+                    <div class="def-en editable-node" data-relingo-block="true" data-relin-paragraph="36"><relin-hc data-id="18"><relin-highlight data-relin-mastered="" data-relin-meta="unstarred-0" data-relin-vocabularies=""><relin-origin>A</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-5" data-relin-vocabularies=""><relin-origin>master</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="starred-5" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6"><relin-origin>in</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="starred-5" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6"><relin-origin>some</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="starred-5" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6"><relin-origin>art</relin-origin></relin-highlight>, <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-5" data-relin-vocabularies=""><relin-origin>especially</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-0" data-relin-vocabularies=""><relin-origin>a</relin-origin></relin-highlight> <relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>composer</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-5" data-relin-vocabularies=""><relin-origin>or</relin-origin></relin-highlight> <relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>conductor</relin-origin></relin-highlight>.</relin-hc></div>
                 </div>
                 
-                <div class="meta-card exp-box"><span class="meta-label">📚 讲解与辨析 (Explanation)</span><ul class="vertical-list exp-list"><li class='editable-node'>💡 <span class='trans-zh'>作为名词：监狱里的黑帮老大。</span></li></ul></div>
+                <div class="meta-card exp-box"><span class="meta-label" data-relingo-block="true" data-relin-paragraph="37"><relin-hc data-id="16">📚 讲解与辨析 (<relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>Explanation</relin-origin></relin-highlight>)</relin-hc></span><ul class="vertical-list exp-list"><li class="editable-node" data-relingo-block="true" data-relin-paragraph="38">💡 <span class="trans-zh">作为名词：监狱里的黑帮老大。</span></li></ul></div>
                 
-                <div class="grid-layout"><div class="meta-card"><span class="meta-label">近义词 (Synonyms)</span><ul class="vertical-list"><li class="editable-node"><span class="en-word">master</span> <span class="trans-zh">(掌握)</span></li></ul></div></div>
-                <div class="meta-card collocations-box"><span class="meta-label">🔗 常见搭配 (Collocations)</span><ul class="vertical-list"><li class="editable-node"><span class="en-word">German Maestro</span> <span class="trans-zh">(德国大师)</span></li><li class="editable-node"><span class="en-word">Mía Maestro</span> <span class="trans-zh">(米亚·梅塞德罗)</span></li><li class="editable-node"><span class="en-word">Mia Maestro</span> <span class="trans-zh">(梅塞德斯)</span></li><li class="editable-node"><span class="en-word">MAESTRO TRADITION</span> <span class="trans-zh">(经典大师)</span></li><li class="editable-node"><span class="en-word">Maestro Narcissus Quagliata</span> <span class="trans-zh">(由义大利国宝级的艺术大师)</span></li></ul></div>
+                <div class="grid-layout"><div class="meta-card"><span class="meta-label" data-relingo-block="true" data-relin-paragraph="39"><relin-hc data-id="19">近义词 (<relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>Synonyms</relin-origin></relin-highlight>)</relin-hc></span><ul class="vertical-list"><li class="editable-node" data-relingo-block="true" data-relin-paragraph="40"><span class="en-word"><relin-hc data-id="20"><relin-highlight data-relin-mastered="" data-relin-meta="unstarred-5" data-relin-vocabularies=""><relin-origin>master</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(掌握)</span></li></ul></div></div>
+                <div class="meta-card collocations-box"><span class="meta-label" data-relingo-block="true" data-relin-paragraph="41"><relin-hc data-id="17">🔗 常见搭配 (<relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>Collocations</relin-origin></relin-highlight>)</relin-hc></span><ul class="vertical-list"><li class="editable-node" data-relingo-block="true" data-relin-paragraph="42"><span class="en-word"><relin-hc data-id="21"><relin-highlight data-relin-meta="starred-1" data-relin-vocabularies="68f65b6976aa0ba4dad39330" class="relingo-highlight"><relin-origin>German</relin-origin></relin-highlight> <relin-highlight data-relin-meta="starred-1" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>Maestro</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(德国大师)</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="43"><span class="en-word"><relin-hc data-id="22">Mía <relin-highlight data-relin-meta="starred-1" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>Maestro</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(米亚·梅塞德罗)</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="44"><span class="en-word"><relin-hc data-id="23"><relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>Mia</relin-origin></relin-highlight> <relin-highlight data-relin-meta="starred-1" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>Maestro</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(梅塞德斯)</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="45"><span class="en-word"><relin-hc data-id="24"><relin-highlight data-relin-meta="starred-1" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>MAESTRO</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-5" data-relin-vocabularies=""><relin-origin>TRADITION</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(经典大师)</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="46"><span class="en-word"><relin-hc data-id="25"><relin-highlight data-relin-meta="starred-1" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>Maestro</relin-origin></relin-highlight> <relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>Narcissus</relin-origin></relin-highlight> <relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>Quagliata</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(由义大利国宝级的艺术大师)</span></li></ul></div>
                 
                 
         <div class="meta-card notes-box" style="margin-top: 15px; background: #fafafa; border: 1px dashed #dcdde1;">
-            <span class="meta-label">📝 备注 (Notes)</span>
-            <div class="editable-node" style="min-height: 40px; color: #555; outline: none;">在此输入备注...</div>
+            <span class="meta-label" data-relingo-block="true" data-relin-paragraph="47">📝 备注 (Notes)</span>
+            <div class="editable-node" style="min-height: 40px; color: #555; outline: none;" data-relingo-block="true" data-relin-paragraph="48">在此输入备注...</div>
         </div>
         
             </div>
@@ -141,27 +708,27 @@
         <div class="word-card">
             <div class="word-header" onclick="toggleCard(2)" title="点击展开/折叠">
                 <div class="header-left">
-                    <span class="word-index">#3</span>
-                    <h2 class="word-title editable-node">spooky</h2>
+                    <span class="word-index" data-relingo-block="true" data-relin-paragraph="21">#3</span>
+                    <h2 class="word-title editable-node" data-relingo-block="true" data-relin-paragraph="22"><relin-hc data-id="12"><relin-highlight data-relin-meta="starred-2" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>spooky</relin-origin></relin-highlight></relin-hc></h2>
                 </div>
-                <div class="header-right" id="arrow-2">▼</div>
+                <div class="header-right" id="arrow-2" data-relingo-block="true" style="transform: rotate(180deg);">▼</div>
             </div>
             
-            <div id="content-2" class="word-content" style="display: none;">
+            <div id="content-2" class="word-content" style="display: block;">
                 <div class="definition-box">
-                    <div class="def-zh editable-node">adj. 幽灵般的；有鬼般的；令人毛骨悚然的</div>
-                    <div class="def-en editable-node">Eerie, or suggestive of ghosts or the supernatural.</div>
+                    <div class="def-zh editable-node" data-relingo-block="true" data-relin-paragraph="49">adj. 幽灵般的；有鬼般的；令人毛骨悚然的</div>
+                    <div class="def-en editable-node" data-relingo-block="true" data-relin-paragraph="50"><relin-hc data-id="28"><relin-highlight data-relin-meta="starred-3" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>Eerie</relin-origin></relin-highlight>, <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-5" data-relin-vocabularies=""><relin-origin>or</relin-origin></relin-highlight> <relin-highlight data-relin-meta="starred-3" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>suggestive</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="starred-0" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6"><relin-origin>of</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-0" data-relin-vocabularies=""><relin-origin>ghosts</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-5" data-relin-vocabularies=""><relin-origin>or</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-5" data-relin-vocabularies=""><relin-origin>the</relin-origin></relin-highlight> <relin-highlight data-relin-meta="starred-4" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>supernatural</relin-origin></relin-highlight>.</relin-hc></div>
                 </div>
                 
-                <div class="meta-card exp-box"><span class="meta-label">📚 讲解与辨析 (Explanation)</span><ul class="vertical-list exp-list"><li class='editable-node'>💡 <span class='trans-zh'>作为形容词：受惊；害怕的;害怕。</span></li><li class='editable-node'>💡 <span class='trans-zh'>作为形容词：不可预测地兴奋；易受惊吓的（尤其用于马）。</span></li></ul></div>
+                <div class="meta-card exp-box"><span class="meta-label" data-relingo-block="true" data-relin-paragraph="51"><relin-hc data-id="26">📚 讲解与辨析 (<relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>Explanation</relin-origin></relin-highlight>)</relin-hc></span><ul class="vertical-list exp-list"><li class="editable-node" data-relingo-block="true" data-relin-paragraph="52">💡 <span class="trans-zh">作为形容词：受惊；害怕的;害怕。</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="53">💡 <span class="trans-zh">作为形容词：不可预测地兴奋；易受惊吓的（尤其用于马）。</span></li></ul></div>
                 
                 
-                <div class="meta-card collocations-box"><span class="meta-label">🔗 常见搭配 (Collocations)</span><ul class="vertical-list"><li class="editable-node"><span class="en-word">Spooky Buddies</span> <span class="trans-zh">(恐怖狗狗)</span></li><li class="editable-node"><span class="en-word">Spooky Runes</span> <span class="trans-zh">(幽灵神符)</span></li><li class="editable-node"><span class="en-word">Encounters of the Spooky Kind</span> <span class="trans-zh">(鬼打鬼)</span></li><li class="editable-node"><span class="en-word">Spooky Pop</span> <span class="trans-zh">(幽灵泡泡)</span></li><li class="editable-node"><span class="en-word">Spooky Mall</span> <span class="trans-zh">(幽灵商场)</span></li></ul></div>
+                <div class="meta-card collocations-box"><span class="meta-label" data-relingo-block="true" data-relin-paragraph="54"><relin-hc data-id="27">🔗 常见搭配 (<relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>Collocations</relin-origin></relin-highlight>)</relin-hc></span><ul class="vertical-list"><li class="editable-node" data-relingo-block="true" data-relin-paragraph="55"><span class="en-word"><relin-hc data-id="29"><relin-highlight data-relin-meta="starred-2" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>Spooky</relin-origin></relin-highlight> <relin-highlight data-relin-meta="starred-0" data-relin-vocabularies="" class="relingo-highlight"><relin-origin>Buddies</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(恐怖狗狗)</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="56"><span class="en-word"><relin-hc data-id="30"><relin-highlight data-relin-meta="starred-2" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>Spooky</relin-origin></relin-highlight> <relin-highlight data-relin-meta="starred-0" data-relin-vocabularies="" class="relingo-highlight"><relin-origin>Runes</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(幽灵神符)</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="57"><span class="en-word"><relin-hc data-id="31"><relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>Encounters</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="starred-0" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6"><relin-origin>of</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-5" data-relin-vocabularies=""><relin-origin>the</relin-origin></relin-highlight> <relin-highlight data-relin-meta="starred-2" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>Spooky</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-5" data-relin-vocabularies=""><relin-origin>Kind</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(鬼打鬼)</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="58"><span class="en-word"><relin-hc data-id="32"><relin-highlight data-relin-meta="starred-2" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>Spooky</relin-origin></relin-highlight> <relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>Pop</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(幽灵泡泡)</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="59"><span class="en-word"><relin-hc data-id="33"><relin-highlight data-relin-meta="starred-2" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>Spooky</relin-origin></relin-highlight> <relin-highlight data-relin-meta="starred-3" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>Mall</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(幽灵商场)</span></li></ul></div>
                 
                 
         <div class="meta-card notes-box" style="margin-top: 15px; background: #fafafa; border: 1px dashed #dcdde1;">
-            <span class="meta-label">📝 备注 (Notes)</span>
-            <div class="editable-node" style="min-height: 40px; color: #555; outline: none;">在此输入备注...</div>
+            <span class="meta-label" data-relingo-block="true" data-relin-paragraph="60">📝 备注 (Notes)</span>
+            <div class="editable-node" style="min-height: 40px; color: #555; outline: none;" data-relingo-block="true" data-relin-paragraph="61">在此输入备注...</div>
         </div>
         
             </div>
@@ -170,33 +737,33 @@
         <div class="word-card">
             <div class="word-header" onclick="toggleCard(3)" title="点击展开/折叠">
                 <div class="header-left">
-                    <span class="word-index">#4</span>
-                    <h2 class="word-title editable-node">tornado</h2>
+                    <span class="word-index" data-relingo-block="true" data-relin-paragraph="23">#4</span>
+                    <h2 class="word-title editable-node" data-relingo-block="true" data-relin-paragraph="24"><relin-hc data-id="13"><relin-highlight data-relin-meta="starred-2" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>tornado</relin-origin></relin-highlight></relin-hc></h2>
                 </div>
-                <div class="header-right" id="arrow-3">▼</div>
+                <div class="header-right" id="arrow-3" data-relingo-block="true" style="transform: rotate(180deg);">▼</div>
             </div>
             
-            <div id="content-3" class="word-content" style="display: none;">
+            <div id="content-3" class="word-content" style="display: block;">
                 <div class="definition-box">
-                    <div class="def-zh editable-node">n. 龙卷风，大旋风；极具破坏力的人（或物），情感火爆的人；【名】 （Tornado）（西）托纳多（人名）</div>
-                    <div class="def-en editable-node">A violent windstorm characterized by a mobile, twisting, funnel-shaped cloud.</div>
+                    <div class="def-zh editable-node" data-relingo-block="true" data-relin-paragraph="62">n. 龙卷风，大旋风；极具破坏力的人（或物），情感火爆的人；【名】 （Tornado）（西）托纳多（人名）</div>
+                    <div class="def-en editable-node" data-relingo-block="true" data-relin-paragraph="63"><relin-hc data-id="38"><relin-highlight data-relin-mastered="" data-relin-meta="unstarred-0" data-relin-vocabularies=""><relin-origin>A</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-4" data-relin-vocabularies=""><relin-origin>violent</relin-origin></relin-highlight> <relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>windstorm</relin-origin></relin-highlight> <relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>characterized</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-5" data-relin-vocabularies=""><relin-origin>by</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-0" data-relin-vocabularies=""><relin-origin>a</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-4" data-relin-vocabularies=""><relin-origin>mobile</relin-origin></relin-highlight>, <relin-highlight data-relin-meta="starred-0" data-relin-vocabularies="" class="relingo-highlight"><relin-origin>twisting</relin-origin></relin-highlight>, <relin-highlight data-relin-meta="starred-3" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>funnel</relin-origin></relin-highlight>-<relin-highlight data-relin-mastered="" data-relin-meta="unstarred-0" data-relin-vocabularies=""><relin-origin>shaped</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-4" data-relin-vocabularies=""><relin-origin>cloud</relin-origin></relin-highlight>.</relin-hc></div>
                 </div>
                 
-                <div class="meta-card exp-box"><span class="meta-label">📚 讲解与辨析 (Explanation)</span><ul class="vertical-list exp-list"><li class='editable-node'>💡 <span class='trans-zh'>该词含义较单一，多在固定搭配中直接使用。</span></li></ul></div>
+                <div class="meta-card exp-box"><span class="meta-label" data-relingo-block="true" data-relin-paragraph="64"><relin-hc data-id="34">📚 讲解与辨析 (<relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>Explanation</relin-origin></relin-highlight>)</relin-hc></span><ul class="vertical-list exp-list"><li class="editable-node" data-relingo-block="true" data-relin-paragraph="65">💡 <span class="trans-zh">该词含义较单一，多在固定搭配中直接使用。</span></li></ul></div>
                 
-                <div class="grid-layout"><div class="meta-card"><span class="meta-label">近义词 (Synonyms)</span><ul class="vertical-list"><li class="editable-node"><span class="en-word">twister</span> <span class="trans-zh">(龙卷风)</span></li><li class="editable-node"><span class="en-word">whirling void</span> <span class="trans-zh">(旋转的虚空)</span></li></ul></div></div>
-                <div class="meta-card collocations-box"><span class="meta-label">🔗 常见搭配 (Collocations)</span><ul class="vertical-list"><li class="editable-node"><span class="en-word">Tornado Alley</span> <span class="trans-zh">(龙卷风巷)</span></li><li class="editable-node"><span class="en-word">tornado jockey</span> <span class="trans-zh">(龙卷风)</span></li><li class="editable-node"><span class="en-word">blazing tornado</span> <span class="trans-zh">(摔角旋风)</span></li><li class="editable-node"><span class="en-word">Tornado Force</span> <span class="trans-zh">(风暴战区)</span></li><li class="editable-node"><span class="en-word">Multihull open - Tornado</span> <span class="trans-zh">(龙卷风级)</span></li></ul></div>
+                <div class="grid-layout"><div class="meta-card"><span class="meta-label" data-relingo-block="true" data-relin-paragraph="66"><relin-hc data-id="35">近义词 (<relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>Synonyms</relin-origin></relin-highlight>)</relin-hc></span><ul class="vertical-list"><li class="editable-node" data-relingo-block="true" data-relin-paragraph="67"><span class="en-word"><relin-hc data-id="39"><relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>twister</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(龙卷风)</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="68"><span class="en-word"><relin-hc data-id="40"><relin-highlight data-relin-meta="starred-0" data-relin-vocabularies="" class="relingo-highlight"><relin-origin>whirling</relin-origin></relin-highlight> <relin-highlight data-relin-meta="starred-4" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>void</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(旋转的虚空)</span></li></ul></div></div>
+                <div class="meta-card collocations-box"><span class="meta-label" data-relingo-block="true" data-relin-paragraph="69"><relin-hc data-id="36">🔗 常见搭配 (<relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>Collocations</relin-origin></relin-highlight>)</relin-hc></span><ul class="vertical-list"><li class="editable-node" data-relingo-block="true" data-relin-paragraph="70"><span class="en-word"><relin-hc data-id="41"><relin-highlight data-relin-meta="starred-2" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>Tornado</relin-origin></relin-highlight> <relin-highlight data-relin-meta="starred-4" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>Alley</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(龙卷风巷)</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="71"><span class="en-word"><relin-hc data-id="42"><relin-highlight data-relin-meta="starred-2" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>tornado</relin-origin></relin-highlight> <relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>jockey</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(龙卷风)</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="72"><span class="en-word"><relin-hc data-id="43"><relin-highlight data-relin-mastered="" data-relin-meta="unstarred-0" data-relin-vocabularies=""><relin-origin>blazing</relin-origin></relin-highlight> <relin-highlight data-relin-meta="starred-2" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>tornado</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(摔角旋风)</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="73"><span class="en-word"><relin-hc data-id="44"><relin-highlight data-relin-meta="starred-2" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>Tornado</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="starred-5" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6"><relin-origin>Force</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(风暴战区)</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="74"><span class="en-word"><relin-hc data-id="45"><relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>Multihull</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-5" data-relin-vocabularies=""><relin-origin>open</relin-origin></relin-highlight> - <relin-highlight data-relin-meta="starred-2" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>Tornado</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(龙卷风级)</span></li></ul></div>
                 
             <div class="example-box">
-                <span class="meta-label">📰 真实语境 (In Context)</span>
-                <div class="sentence editable-node">"A <span class='hl-word'>tornado</span> is a rotating column of air."</div>
-                <div class="source editable-node">📖 Dictionary Example</div>
+                <span class="meta-label" data-relingo-block="true" data-relin-paragraph="75"><relin-hc data-id="46">📰 真实语境 (<relin-highlight data-relin-mastered="" data-relin-meta="starred-5" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6"><relin-origin>In</relin-origin></relin-highlight> <relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>Context</relin-origin></relin-highlight>)</relin-hc></span>
+                <div class="sentence editable-node" data-relingo-block="true" data-relin-paragraph="76">"A <span class="hl-word"><relin-hc data-id="37"><relin-highlight data-relin-meta="starred-2" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>tornado</relin-origin></relin-highlight></relin-hc></span><relin-hc data-id="47"> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-0" data-relin-vocabularies=""><relin-origin>is</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-0" data-relin-vocabularies=""><relin-origin>a</relin-origin></relin-highlight> <relin-highlight data-relin-meta="starred-0" data-relin-vocabularies="" class="relingo-highlight"><relin-origin>rotating</relin-origin></relin-highlight> <relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>column</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="starred-0" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6"><relin-origin>of</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="starred-5" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6"><relin-origin>air</relin-origin></relin-highlight>."</relin-hc></div>
+                <div class="source editable-node" data-relingo-block="true" data-relin-paragraph="77"><relin-hc data-id="48">📖 <relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>Dictionary</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-5" data-relin-vocabularies=""><relin-origin>Example</relin-origin></relin-highlight></relin-hc></div>
             </div>
             
                 
         <div class="meta-card notes-box" style="margin-top: 15px; background: #fafafa; border: 1px dashed #dcdde1;">
-            <span class="meta-label">📝 备注 (Notes)</span>
-            <div class="editable-node" style="min-height: 40px; color: #555; outline: none;">在此输入备注...</div>
+            <span class="meta-label" data-relingo-block="true" data-relin-paragraph="78">📝 备注 (Notes)</span>
+            <div class="editable-node" style="min-height: 40px; color: #555; outline: none;" data-relingo-block="true" data-relin-paragraph="79">在此输入备注...</div>
         </div>
         
             </div>
@@ -205,27 +772,27 @@
         <div class="word-card">
             <div class="word-header" onclick="toggleCard(4)" title="点击展开/折叠">
                 <div class="header-left">
-                    <span class="word-index">#5</span>
-                    <h2 class="word-title editable-node">precarious</h2>
+                    <span class="word-index" data-relingo-block="true" data-relin-paragraph="25">#5</span>
+                    <h2 class="word-title editable-node" data-relingo-block="true" data-relin-paragraph="26"><relin-hc data-id="14"><relin-highlight data-relin-meta="starred-3" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>precarious</relin-origin></relin-highlight></relin-hc></h2>
                 </div>
-                <div class="header-right" id="arrow-4">▼</div>
+                <div class="header-right" id="arrow-4" data-relingo-block="true" style="transform: rotate(180deg);">▼</div>
             </div>
             
-            <div id="content-4" class="word-content" style="display: none;">
+            <div id="content-4" class="word-content" style="display: block;">
                 <div class="definition-box">
-                    <div class="def-zh editable-node">adj. 摇摇欲坠的，不稳固的；（局势）不确定的，危险的</div>
-                    <div class="def-en editable-node">Dangerously insecure or unstable; perilous.</div>
+                    <div class="def-zh editable-node" data-relingo-block="true" data-relin-paragraph="80">adj. 摇摇欲坠的，不稳固的；（局势）不确定的，危险的</div>
+                    <div class="def-en editable-node" data-relingo-block="true" data-relin-paragraph="81"><relin-hc data-id="52"><relin-highlight data-relin-meta="starred-3" data-relin-vocabularies="68f65b6976aa0ba4dad39330" class="relingo-highlight"><relin-origin>Dangerously</relin-origin></relin-highlight> <relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>insecure</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-5" data-relin-vocabularies=""><relin-origin>or</relin-origin></relin-highlight> <relin-highlight data-relin-meta="starred-4" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>unstable</relin-origin></relin-highlight>; <relin-highlight data-relin-meta="starred-3" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>perilous</relin-origin></relin-highlight>.</relin-hc></div>
                 </div>
                 
-                <div class="meta-card exp-box"><span class="meta-label">📚 讲解与辨析 (Explanation)</span><ul class="vertical-list exp-list"><li class='editable-node'>💡 <span class='trans-zh'>作为形容词：取决于另一个人的意图。</span></li></ul></div>
+                <div class="meta-card exp-box"><span class="meta-label" data-relingo-block="true" data-relin-paragraph="82"><relin-hc data-id="49">📚 讲解与辨析 (<relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>Explanation</relin-origin></relin-highlight>)</relin-hc></span><ul class="vertical-list exp-list"><li class="editable-node" data-relingo-block="true" data-relin-paragraph="83">💡 <span class="trans-zh">作为形容词：取决于另一个人的意图。</span></li></ul></div>
                 
-                <div class="grid-layout"><div class="meta-card"><span class="meta-label">近义词 (Synonyms)</span><ul class="vertical-list"><li class="editable-node"><span class="en-word">tottering</span> <span class="trans-zh">(摇摇欲坠)</span></li><li class="editable-node"><span class="en-word">wobbly</span> <span class="trans-zh">(摇摇晃晃)</span></li><li class="editable-node"><span class="en-word">shaky</span> <span class="trans-zh">(摇摇欲坠)</span></li><li class="editable-node"><span class="en-word">unstable</span> <span class="trans-zh">(不稳定)</span></li><li class="editable-node"><span class="en-word">unsafe</span> <span class="trans-zh">(不安全)</span></li></ul></div></div>
-                <div class="meta-card collocations-box"><span class="meta-label">🔗 常见搭配 (Collocations)</span><ul class="vertical-list"><li class="editable-node"><span class="en-word">very precarious</span> <span class="trans-zh">(不绝如缕)</span></li><li class="editable-node"><span class="en-word">precarious uncertain</span> <span class="trans-zh">(不稳定的)</span></li><li class="editable-node"><span class="en-word">precarious a</span> <span class="trans-zh">(危险的)</span></li><li class="editable-node"><span class="en-word">a precarious life</span> <span class="trans-zh">(不安定的生活)</span></li><li class="editable-node"><span class="en-word">precarious state</span> <span class="trans-zh">(危险的状态)</span></li></ul></div>
+                <div class="grid-layout"><div class="meta-card"><span class="meta-label" data-relingo-block="true" data-relin-paragraph="84"><relin-hc data-id="50">近义词 (<relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>Synonyms</relin-origin></relin-highlight>)</relin-hc></span><ul class="vertical-list"><li class="editable-node" data-relingo-block="true" data-relin-paragraph="85"><span class="en-word"><relin-hc data-id="53"><relin-highlight data-relin-meta="starred-0" data-relin-vocabularies="" class="relingo-highlight"><relin-origin>tottering</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(摇摇欲坠)</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="86"><span class="en-word"><relin-hc data-id="54"><relin-highlight data-relin-meta="starred-1" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6 68f65b6976aa0ba4dad39330" class="relingo-highlight"><relin-origin>wobbly</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(摇摇晃晃)</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="87"><span class="en-word"><relin-hc data-id="55"><relin-highlight data-relin-meta="starred-3" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>shaky</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(摇摇欲坠)</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="88"><span class="en-word"><relin-hc data-id="56"><relin-highlight data-relin-meta="starred-4" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>unstable</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(不稳定)</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="89"><span class="en-word"><relin-hc data-id="57"><relin-highlight data-relin-meta="starred-3" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>unsafe</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(不安全)</span></li></ul></div></div>
+                <div class="meta-card collocations-box"><span class="meta-label" data-relingo-block="true" data-relin-paragraph="90"><relin-hc data-id="51">🔗 常见搭配 (<relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>Collocations</relin-origin></relin-highlight>)</relin-hc></span><ul class="vertical-list"><li class="editable-node" data-relingo-block="true" data-relin-paragraph="91"><span class="en-word"><relin-hc data-id="58"><relin-highlight data-relin-mastered="" data-relin-meta="unstarred-5" data-relin-vocabularies=""><relin-origin>very</relin-origin></relin-highlight> <relin-highlight data-relin-meta="starred-3" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>precarious</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(非常危险的)</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="92"><span class="en-word"><relin-hc data-id="59"><relin-highlight data-relin-meta="starred-3" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>precarious</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-4" data-relin-vocabularies=""><relin-origin>uncertain</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(不稳定的)</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="93"><span class="en-word"><relin-hc data-id="60"><relin-highlight data-relin-meta="starred-3" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>precarious</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="unstarred-0" data-relin-vocabularies=""><relin-origin>a</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(危险的)</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="94"><span class="en-word"><relin-hc data-id="61"><relin-highlight data-relin-mastered="" data-relin-meta="unstarred-0" data-relin-vocabularies=""><relin-origin>a</relin-origin></relin-highlight> <relin-highlight data-relin-meta="starred-3" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>precarious</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="starred-5" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6"><relin-origin>life</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(不安定的生活)</span></li><li class="editable-node" data-relingo-block="true" data-relin-paragraph="95"><span class="en-word"><relin-hc data-id="62"><relin-highlight data-relin-meta="starred-3" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6" class="relingo-highlight"><relin-origin>precarious</relin-origin></relin-highlight> <relin-highlight data-relin-mastered="" data-relin-meta="starred-5" data-relin-vocabularies="6679c0ee12643b3f0e27a3b6"><relin-origin>state</relin-origin></relin-highlight></relin-hc></span> <span class="trans-zh">(危险的状态)</span></li></ul></div>
                 
                 
         <div class="meta-card notes-box" style="margin-top: 15px; background: #fafafa; border: 1px dashed #dcdde1;">
-            <span class="meta-label">📝 备注 (Notes)</span>
-            <div class="editable-node" style="min-height: 40px; color: #555; outline: none;">在此输入备注...</div>
+            <span class="meta-label" data-relingo-block="true" data-relin-paragraph="96">📝 备注 (Notes)</span>
+            <div class="editable-node" style="min-height: 40px; color: #555; outline: none;" data-relingo-block="true" data-relin-paragraph="97">在此输入备注...</div>
         </div>
         
             </div>
@@ -233,7 +800,7 @@
         
     </div>
     
-    <div id="gh-save-btn" onclick="saveToGitHub()">💾 保存到 GitHub</div>
+    <div id="gh-save-btn" onclick="saveToGitHub()" style="display: none;">正在保存...</div>
     
     <script>
         // GitHub API 配置区
@@ -348,5 +915,5 @@
             }
         }
     </script>
-</body>
-</html>
+
+<div style="position: fixed; bottom: 12%; left: 50%; transform: translateX(-50%); background-color: rgba(30, 30, 30, 0.95); color: rgb(255, 255, 255); padding: 12px 24px; border-radius: 30px; font-size: 15px; font-family: sans-serif; font-weight: bold; z-index: 2147483647; display: none; cursor: pointer; box-shadow: rgba(0, 0, 0, 0.3) 0px 4px 12px; pointer-events: auto; user-select: none; letter-spacing: 0.5px; white-space: nowrap;">🔗 复制带链接</div><div id="anki-float-btn" style="top: 40vh; right: 0px; left: auto; transition: none;" class="docked-right"></div><div id="anki-universal-container" style="display: none; top: 590.792px; left: 14.2321px;"><div id="anki-panel-header"><span data-relingo-block="true" data-relin-paragraph="27"><relin-hc data-id="15">📘 <relin-highlight data-relin-meta="unstarred-undefined" data-relin-vocabularies=""><relin-origin>Anki</relin-origin></relin-highlight> <relin-highlight data-relin-meta="starred-3" data-relin-vocabularies="68f65b6976aa0ba4dad39330" class="relingo-highlight"><relin-origin>Sync</relin-origin></relin-highlight></relin-hc></span><span id="anki-close-btn" data-relingo-block="true">×</span></div><span id="anki-search-status" data-relingo-block="true" style="color: rgb(76, 175, 80);">✔ 追加更新完毕</span><input id="anki-manual-search" class="anki-input-modern" type="text" placeholder="输入单词后回车检索..."><div id="anki-add-option"><label><input type="checkbox">未找到自动新建</label><label><input type="checkbox">悬浮球一键直推</label></div><select id="anki-field-selector" class="anki-input-modern"><option value="Notes">推送至: Notes</option><option value="Source-news 系列">推送至: Source-news 系列</option></select><button id="anki-universal-btn" data-relin-paragraph="30" disabled="" style="">✔ 成功</button><textarea class="anki-input-modern" placeholder="在此输入要追加的内容..."></textarea></div><div id="tts-plus-root"></div></body><relingo-app id="relingo-drawer" style="visibility: visible;"><div class="relingo-drawer-root"></div></relingo-app></html>

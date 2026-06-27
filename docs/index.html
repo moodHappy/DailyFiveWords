@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Daily Five Words - 学习日历</title>
+    <style>
+        :root { --bg: #f5f5f7; --text: #333; --muted: #888; --primary: #0066cc; --border: #e0e0e0; --card: #fff; }
+        body, html { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif; -webkit-font-smoothing: antialiased; background: var(--bg); margin: 0; padding: 0; color: var(--text); height: 100%; }
+        .container { max-width: 600px; margin: 0 auto; padding-bottom: 20px; box-sizing: border-box;}
+        
+        .header-panel { text-align: center; padding: 35px 20px 20px 20px; border-bottom: 1px solid var(--border); background: var(--card); margin-bottom: 20px;}
+        .header-panel h1 { font-size: 2.2rem; font-weight: 800; margin: 0 0 8px 0; color: #1a252f; }
+        .header-panel p { margin: 0; font-size: 0.85rem; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); font-weight: 600;}
+        
+        .controls { background: var(--bg); padding: 0 20px 15px 20px; display: flex; justify-content: center; align-items: center; gap: 10px; }
+        .control-btn { background: var(--primary); color: #fff; border: none; border-radius: 8px; padding: 8px 14px; font-size: 14px; cursor: pointer; font-weight: bold; transition: all 0.2s; }
+        .control-btn:active { opacity: 0.8; transform: scale(0.95); }
+        .select-box { padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; background: #fff; outline: none; font-weight: bold; cursor: pointer; }
+        
+        .calendar-wrapper { background: var(--card); padding: 20px; margin: 0 15px 20px 15px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+        .weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: bold; font-size: 13px; color: var(--muted); margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #f0f0f0; }
+        .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+        .day-cell { aspect-ratio: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 16px; font-weight: 600; border-radius: 10px; cursor: pointer; position: relative; transition: all 0.2s; }
+        .day-cell.empty { visibility: hidden; }
+        .day-cell.has-news { color: var(--text); }
+        .day-cell.no-news { color: #ccc; }
+        .day-cell.selected { background: #eef5ff; border: 1px solid var(--primary); color: var(--primary); }
+        .day-cell.today { background: #f0f0f0; border: 1px solid #ddd; }
+        .dot { width: 5px; height: 5px; background-color: var(--primary); border-radius: 50%; position: absolute; bottom: 6px; display: none; }
+        .day-cell.has-news .dot { display: block; }
+        
+        .feed-list { padding: 0 15px; display: flex; flex-direction: column; gap: 12px; }
+        .feed-item { background: var(--card); border-radius: 14px; padding: 18px; display: flex; align-items: center; text-decoration: none; color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.03); border-left: 4px solid #d35400; transition: all 0.2s; }
+        .feed-item:active { transform: scale(0.98); background: #fafafa; }
+        .feed-time { font-size: 15px; font-weight: bold; color: #d35400; font-family: monospace; }
+        .feed-title { font-size: 15px; font-weight: bold; color: #333; margin-left: 15px; flex: 1; }
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 14px; background: var(--card); border-radius: 14px; border: 1px dashed #ccc;}
+    </style>
+</head>
+<body>
+    <div class="header-panel">
+        <h1>Daily Five Words</h1>
+        <p>每日 5 词集训日历</p>
+    </div>
+    <div class="container">
+        <div class="controls">
+            <button class="control-btn" id="prevBtn">&lt;</button>
+            <select class="select-box" id="yearSelect"></select>
+            <select class="select-box" id="monthSelect">
+                <option value="1">01月</option><option value="2">02月</option><option value="3">03月</option>
+                <option value="4">04月</option><option value="5">05月</option><option value="6">06月</option>
+                <option value="7">07月</option><option value="8">08月</option><option value="9">09月</option>
+                <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
+            </select>
+            <button class="control-btn" id="nextBtn">&gt;</button>
+            <button class="control-btn" id="todayBtn">今日</button>
+        </div>
+        <div class="calendar-wrapper">
+            <div class="weekdays"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
+            <div class="days-grid" id="daysGrid"></div>
+        </div>
+        <div class="feed-list" id="feedList"></div>
+    </div>
+
+    <script>
+        const archiveData = {"2026": {"6": {"27": [{"time": "21:46", "path": "2026/6/2026_6_27_2146.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}]}}};
+        const today = new Date();
+        let selectedYear = today.getFullYear();
+        let selectedMonth = today.getMonth() + 1;
+        let selectedDay = today.getDate();
+
+        const yearSelect = document.getElementById('yearSelect');
+        const monthSelect = document.getElementById('monthSelect');
+        const daysGrid = document.getElementById('daysGrid');
+        const feedList = document.getElementById('feedList');
+
+        function initDropdowns() {
+            const years = Object.keys(archiveData).map(Number).sort((a, b) => b - a);
+            if (!years.includes(selectedYear)) years.unshift(selectedYear);
+            years.forEach(y => {
+                const opt = document.createElement('option'); opt.value = y; opt.textContent = y + ' 年';
+                yearSelect.appendChild(opt);
+            });
+            yearSelect.value = selectedYear; monthSelect.value = selectedMonth;
+        }
+
+        function renderCalendar(year, month) {
+            daysGrid.innerHTML = '';
+            const firstDay = new Date(year, month - 1, 1).getDay();
+            const startDay = firstDay === 0 ? 7 : firstDay;
+            const daysInMonth = new Date(year, month, 0).getDate();
+            
+            for (let i = 1; i < startDay; i++) {
+                const empty = document.createElement('div'); empty.className = 'day-cell empty';
+                daysGrid.appendChild(empty);
+            }
+            
+            const monthData = (archiveData[year] && archiveData[year][month]) ? archiveData[year][month] : {};
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const cell = document.createElement('div'); cell.className = 'day-cell'; cell.textContent = day;
+                const dot = document.createElement('div'); dot.className = 'dot'; cell.appendChild(dot);
+                
+                if (monthData[day] && monthData[day].length > 0) cell.classList.add('has-news'); else cell.classList.add('no-news');
+                if (year === today.getFullYear() && month === today.getMonth() + 1 && day === today.getDate()) cell.classList.add('today');
+                if (year === selectedYear && month === selectedMonth && day === selectedDay) cell.classList.add('selected');
+                
+                cell.addEventListener('click', () => {
+                    selectedYear = year; selectedMonth = month; selectedDay = day;
+                    renderCalendar(year, month); renderFeedList(year, month, day);
+                });
+                daysGrid.appendChild(cell);
+            }
+        }
+
+        function renderFeedList(year, month, day) {
+            feedList.innerHTML = '';
+            const monthData = (archiveData[year] && archiveData[year][month]) ? archiveData[year][month] : null;
+            const dayData = monthData ? monthData[day] : null;
+            
+            if (dayData && dayData.length > 0) {
+                dayData.forEach(item => {
+                    const a = document.createElement('a'); a.href = item.path; a.className = 'feed-item';
+                    a.innerHTML = `<span class="feed-time">${item.time}</span><span class="feed-title">${item.title}</span> ➔`;
+                    feedList.appendChild(a);
+                });
+            } else {
+                feedList.innerHTML = '<div class="empty-state">今日暂无学习记录</div>';
+            }
+        }
+
+        yearSelect.addEventListener('change', (e) => { selectedYear = parseInt(e.target.value); renderCalendar(selectedYear, selectedMonth); });
+        monthSelect.addEventListener('change', (e) => { selectedMonth = parseInt(e.target.value); renderCalendar(selectedYear, selectedMonth); });
+        document.getElementById('prevBtn').addEventListener('click', () => { selectedMonth--; if (selectedMonth < 1) { selectedMonth = 12; selectedYear--; yearSelect.value = selectedYear; } monthSelect.value = selectedMonth; renderCalendar(selectedYear, selectedMonth); });
+        document.getElementById('nextBtn').addEventListener('click', () => { selectedMonth++; if (selectedMonth > 12) { selectedMonth = 1; selectedYear++; yearSelect.value = selectedYear; } monthSelect.value = selectedMonth; renderCalendar(selectedYear, selectedMonth); });
+        document.getElementById('todayBtn').addEventListener('click', () => { selectedYear = today.getFullYear(); selectedMonth = today.getMonth() + 1; selectedDay = today.getDate(); yearSelect.value = selectedYear; monthSelect.value = selectedMonth; renderCalendar(selectedYear, selectedMonth); renderFeedList(selectedYear, selectedMonth, selectedDay); });
+
+        initDropdowns(); renderCalendar(selectedYear, selectedMonth); renderFeedList(selectedYear, selectedMonth, selectedDay);
+    </script>
+</body>
+</html>

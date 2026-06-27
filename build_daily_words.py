@@ -3,6 +3,7 @@ import json
 import requests
 import feedparser
 import re
+import random
 from datetime import datetime, timezone, timedelta
 from deep_translator import GoogleTranslator
 
@@ -263,16 +264,15 @@ def main():
         with open(STATE_FILE, "r", encoding="utf-8") as f:
             learned_words = json.load(f).get("learned", [])
 
-    today_words = []
-    for w in all_words:
-        if w not in learned_words:
-            today_words.append(w)
-        if len(today_words) >= DAILY_COUNT:
-            break
+    # 筛选出未学习的单词
+    unlearned_words = [w for w in all_words if w not in learned_words]
 
-    if not today_words:
+    if not unlearned_words:
         print("🎉 恭喜！词库已经全部学完！")
         return
+
+    # 随机抽取单词
+    today_words = random.sample(unlearned_words, min(DAILY_COUNT, len(unlearned_words)))
 
     print(f"🎯 今日目标词汇: {', '.join(today_words)}")
     translator = GoogleTranslator(source='en', target='zh-CN')

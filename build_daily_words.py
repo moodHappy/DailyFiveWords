@@ -9,7 +9,7 @@ from deep_translator import GoogleTranslator
 # ================= 配置区 =================
 BASE_DIR = "docs"
 STATE_FILE = os.path.join(BASE_DIR, "learned.json")
-WORDS_URL = "https://raw.githubusercontent.com/moodHappy/DailyFiveWords/refs/heads/main/Collins_1.txt"
+WORDS_URL = "https://raw.githubusercontent.com/moodHappy/DailyFiveWords/refs/heads/main/docs/Collins_1.txt"
 TZ_UTC_8 = timezone(timedelta(hours=8))
 DAILY_COUNT = 5
 
@@ -43,7 +43,7 @@ def get_word_image(word):
             if 'thumbnail' in page_data:
                 return page_data['thumbnail']['source']
     except: pass
-    
+
     try:
         # 2. 尝试从维基共享资源中搜索图片
         commons_url = f"https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch={word}&gsrnamespace=6&gsrlimit=1&prop=imageinfo&iiprop=url&format=json"
@@ -54,7 +54,7 @@ def get_word_image(word):
             if image_info:
                 return image_info[0].get('url')
     except: pass
-    
+
     return None
 
 def get_real_news_example(word):
@@ -92,14 +92,14 @@ def get_wiki_example(word):
 def get_guaranteed_example(word, dict_example=None):
     ex, src = get_real_news_example(word)
     if ex: return ex, src
-    
+
     ex, src = get_wiki_example(word)
     if ex: return ex, src
-    
+
     if dict_example and dict_example != "No example available.":
         hl_sentence = re.sub(rf'(\b{re.escape(word)}\b)', r"<span class='hl-word'>\1</span>", dict_example, flags=re.IGNORECASE)
         return f"\"{hl_sentence}\"", "📖 Dictionary Example"
-        
+
     return None, None
 
 def get_collocations(word):
@@ -132,16 +132,16 @@ def fetch_word_details(word, translator):
         "example_source": None,
         "image_url": None
     }
-    
+
     dict_example_raw = None
     extra_meanings = []
-    
+
     try:
         res = requests.get(f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}", timeout=8)
         if res.status_code == 200:
             data = res.json()[0]
             details["phonetic"] = data.get("phonetics", [{}])[0].get("text", "")
-            
+
             for meaning in data.get("meanings", []):
                 pos = meaning.get("partOfSpeech", "unknown")
                 for i, def_obj in enumerate(meaning.get("definitions", [])):
@@ -149,16 +149,16 @@ def fetch_word_details(word, translator):
                         details["definition_en"] = def_obj.get("definition", "")
                     else:
                         extra_meanings.append(f"As {pos}: {def_obj.get('definition', '')}")
-                        
+
                     if "example" in def_obj and not dict_example_raw:
                         dict_example_raw = def_obj['example']
-                
+
                 details["synonyms"].extend(meaning.get("synonyms", []))
                 details["antonyms"].extend(meaning.get("antonyms", []))
-                
+
             details["synonyms"] = list(set(details["synonyms"]))[:5]
             details["antonyms"] = list(set(details["antonyms"]))[:5]
-            
+
             if extra_meanings:
                 details["explanation"] = extra_meanings[:2]
     except: pass
@@ -179,7 +179,7 @@ def fetch_word_details(word, translator):
     if details["synonyms"]:
         syn_zh = translate_batch(details["synonyms"], translator)
         details["synonyms"] = [{"en": en, "zh": zh} for en, zh in zip(details["synonyms"], syn_zh)]
-        
+
     if details["antonyms"]:
         ant_zh = translate_batch(details["antonyms"], translator)
         details["antonyms"] = [{"en": en, "zh": zh} for en, zh in zip(details["antonyms"], ant_zh)]
@@ -191,10 +191,10 @@ def fetch_word_details(word, translator):
         details["collocations"] = [{"en": p, "zh": zh} for p, zh in zip(phrases, phrases_zh)]
 
     details["example"], details["example_source"] = get_guaranteed_example(word, dict_example_raw)
-    
+
     # 获取图片
     details["image_url"] = get_word_image(word)
-        
+
     return details
 
 def build_list_html(items):
@@ -210,7 +210,7 @@ def build_list_html(items):
 def main():
     os.makedirs(BASE_DIR, exist_ok=True)
     now_obj = datetime.now(TZ_UTC_8)
-    
+
     print("📥 正在拉取 Collins 词库...")
     try:
         res = requests.get(WORDS_URL, timeout=10)
@@ -231,7 +231,7 @@ def main():
             today_words.append(w)
         if len(today_words) >= DAILY_COUNT:
             break
-            
+
     if not today_words:
         print("🎉 恭喜！词库已经全部学完！")
         return
@@ -241,18 +241,18 @@ def main():
     words_data = [fetch_word_details(w, translator) for w in today_words]
 
     generate_daily_page(words_data, now_obj)
-    
+
     learned_words.extend(today_words)
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump({"learned": learned_words}, f, ensure_ascii=False, indent=2)
-        
+
     generate_index()
 
 def generate_daily_page(words_data, now_obj):
     year_str, month_str = str(now_obj.year), str(now_obj.month)
     target_dir = os.path.join(BASE_DIR, year_str, month_str)
     os.makedirs(target_dir, exist_ok=True)
-    
+
     filename = f"{now_obj.year}_{now_obj.month}_{now_obj.day}_{now_obj.strftime('%H%M')}.html"
     html_path = os.path.join(target_dir, filename)
     now_str = now_obj.strftime("%Y-%m-%d")
@@ -261,7 +261,7 @@ def generate_daily_page(words_data, now_obj):
     for idx, item in enumerate(words_data):
         exp_list = "".join([f"<li>💡 <span class='trans-zh'>{e}</span></li>" for e in item['explanation']])
         exp_html = f'<div class="meta-card exp-box"><span class="meta-label">📚 讲解与辨析 (Explanation)</span><ul class="vertical-list exp-list">{exp_list}</ul></div>'
-        
+
         # 动态图片区块
         img_html = ""
         if item['image_url']:
@@ -269,14 +269,14 @@ def generate_daily_page(words_data, now_obj):
 
         syn_list = build_list_html(item['synonyms'])
         ant_list = build_list_html(item['antonyms'])
-        
+
         grid_html = ""
         if syn_list or ant_list:
             grid_html += '<div class="grid-layout">'
             if syn_list: grid_html += f'<div class="meta-card"><span class="meta-label">近义词 (Synonyms)</span>{syn_list}</div>'
             if ant_list: grid_html += f'<div class="meta-card"><span class="meta-label">反义词 (Antonyms)</span>{ant_list}</div>'
             grid_html += '</div>'
-            
+
         col_list = build_list_html(item['collocations'])
         col_html = f'<div class="meta-card collocations-box"><span class="meta-label">🔗 常见搭配 (Collocations)</span>{col_list}</div>' if col_list else ""
 
@@ -423,17 +423,17 @@ def generate_index():
                             day = parts[2]
                             time_str = f"{parts[3][:2]}:{parts[3][2:]}"
                             file_path = f"{year}/{month}/{file}"
-                            
+
                             if day not in archive_data[year][month]:
                                 archive_data[year][month][day] = []
-                                
+
                             archive_data[year][month][day].append({
                                 "time": time_str,
                                 "path": file_path,
                                 "title": "🎯 5 词连击任务"
                             })
                     except: pass
-                        
+
     json_data = json.dumps(archive_data)
 
     html_template = """<!DOCTYPE html>

@@ -142,7 +142,6 @@ def get_collocations(word):
 def fetch_word_details(word, translator):
     details = {
         "word": word,
-        "phonetic": "",
         "definition_en": "暂无英文释义",
         "definition_zh": "暂无中文释义",
         "explanation": [], 
@@ -161,7 +160,6 @@ def fetch_word_details(word, translator):
         res = requests.get(f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}", timeout=8)
         if res.status_code == 200:
             data = res.json()[0]
-            details["phonetic"] = data.get("phonetics", [{}])[0].get("text", "")
 
             for meaning in data.get("meanings", []):
                 pos = meaning.get("partOfSpeech", "unknown")
@@ -319,7 +317,6 @@ def generate_daily_page(words_data, now_obj):
                 <div class="header-left">
                     <span class="word-index">#{idx+1}</span>
                     <h2 class="word-title editable-node">{item['word']}</h2>
-                    <span class="phonetic editable-node">{item['phonetic']}</span>
                 </div>
                 <div class="header-right" id="arrow-{idx}">▼</div>
             </div>
@@ -363,7 +360,6 @@ def generate_daily_page(words_data, now_obj):
         
         .word-index {{ background: var(--accent); color: #fff; padding: 2px 8px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; }}
         .word-title {{ font-size: 2.2rem; margin: 0; color: #d35400; text-transform: lowercase; font-family: Georgia, serif; }}
-        .phonetic {{ font-size: 1.1rem; color: var(--muted); font-family: monospace; }}
         
         .word-content {{ margin-top: 18px; padding-top: 15px; border-top: 1px solid #f0f0f0; }}
         

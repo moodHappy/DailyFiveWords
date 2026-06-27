@@ -68,7 +68,7 @@ def get_wiki_example(word):
     return None, None
 
 def get_guaranteed_example(word, dict_example=None):
-    """整合三重例句雷达，绝不让例句为空"""
+    """整合三重例句雷达，找不到真的就返回空，绝不用废话凑数"""
     ex, src = get_real_news_example(word)
     if ex: return ex, src
     
@@ -79,7 +79,8 @@ def get_guaranteed_example(word, dict_example=None):
         hl_sentence = re.sub(rf'(\b{re.escape(word)}\b)', r"<span class='hl-word'>\1</span>", dict_example, flags=re.IGNORECASE)
         return f"\"{hl_sentence}\"", "📖 Dictionary Example"
         
-    return f"The word <span class='hl-word'>{word}</span> is often used in specific advanced contexts.", "🤖 System Generation"
+    # 如果三大途径全军覆没，返回空，让前端直接把这个区块隐身！
+    return None, None
 
 def get_collocations(word):
     """获取强关联固定搭配，强行剔除标点和无意义虚词"""
@@ -90,7 +91,6 @@ def get_collocations(word):
             stop_words = {'and', 'or', 'the', 'a', 'an', 'in', 'on', 'at', 'to', 'by', 'of', 'for', 'with', 'is', 'are'}
             for item in res.json():
                 cw = item['word'].strip()
-                # 只保留纯字母单词，并且排除常见虚词
                 if re.match(r'^[a-zA-Z]+$', cw) and len(cw) > 2 and cw.lower() not in stop_words:
                     valid_collocs.append(cw)
                 if len(valid_collocs) >= 5:
@@ -106,12 +106,12 @@ def fetch_word_details(word, translator):
         "phonetic": "",
         "definition_en": "暂无英文释义",
         "definition_zh": "暂无中文释义",
-        "explanation": [], # 存放讲解和辨析
+        "explanation": [], 
         "synonyms": [],
         "antonyms": [],
         "collocations": [],
-        "example": "暂无例句",
-        "example_source": "Dictionary"
+        "example": None,
+        "example_source": None
     }
     
     dict_example_raw = None
@@ -129,7 +129,6 @@ def fetch_word_details(word, translator):
                     if details["definition_en"] == "暂无英文释义":
                         details["definition_en"] = def_obj.get("definition", "")
                     else:
-                        # 收集其他释义作为“讲解和辨析”素材
                         extra_meanings.append(f"As {pos}: {def_obj.get('definition', '')}")
                         
                     if "example" in def_obj and not dict_example_raw:
@@ -141,9 +140,7 @@ def fetch_word_details(word, translator):
             details["synonyms"] = list(set(details["synonyms"]))[:5]
             details["antonyms"] = list(set(details["antonyms"]))[:5]
             
-            # 生成讲解辨析
             if extra_meanings:
-                # 只取前两条次要释义防止太长
                 details["explanation"] = extra_meanings[:2]
     except: pass
 
@@ -152,7 +149,6 @@ def fetch_word_details(word, translator):
             details["definition_zh"] = translator.translate(details["definition_en"])
         except: pass
 
-    # 翻译“讲解和辨析”
     if details["explanation"]:
         try:
             exp_zh = translate_batch(details["explanation"], translator)
@@ -180,12 +176,13 @@ def fetch_word_details(word, translator):
     return details
 
 def build_list_html(items):
-    """辅助渲染竖向带翻译的列表，如果为空返回空字符串"""
+    """渲染同一行的英文+中文释义结构"""
     if not items:
         return ""
     html = '<ul class="vertical-list">'
     for item in items:
         zh_text = f'<span class="trans-zh">({item["zh"]})</span>' if item.get("zh") and item["zh"] != item["en"] else ''
+        # 英文和中文直接内联，不强制换行
         html += f'<li><span class="en-word">{item["en"]}</span> {zh_text}</li>'
     html += '</ul>'
     return html
@@ -216,7 +213,7 @@ def main():
             break
             
     if not today_words:
-        print("🎉 恭喜！Collins 词库已经全部学完！")
+        print("🎉 恭喜！词库已经全部学完！")
         return
 
     print(f"🎯 今日目标词汇: {', '.join(today_words)}")
@@ -242,8 +239,7 @@ def generate_daily_page(words_data, now_obj):
 
     cards_html = ""
     for idx, item in enumerate(words_data):
-        # 构建各个数据块，利用条件判断自动隐藏空区块
-        exp_list = "".join([f"<li>💡 {e}</li>" for e in item['explanation']])
+        exp_list = "".join([f"<li>💡 <span class='trans-zh'>{e}</span></li>" for e in item['explanation']])
         exp_html = f'<div class="meta-card exp-box"><span class="meta-label">📚 讲解与辨析 (Explanation)</span><ul class="vertical-list exp-list">{exp_list}</ul></div>'
         
         syn_list = build_list_html(item['synonyms'])
@@ -258,6 +254,17 @@ def generate_daily_page(words_data, now_obj):
             
         col_list = build_list_html(item['collocations'])
         col_html = f'<div class="meta-card collocations-box"><span class="meta-label">🔗 常见搭配 (Collocations)</span>{col_list}</div>' if col_list else ""
+
+        # 例句板块的动态隐藏逻辑
+        example_html = ""
+        if item['example']:
+            example_html = f"""
+            <div class="example-box">
+                <span class="meta-label">📰 真实语境 (In Context)</span>
+                <div class="sentence">{item['example']}</div>
+                <div class="source">{item['example_source']}</div>
+            </div>
+            """
 
         cards_html += f"""
         <div class="word-card">
@@ -275,12 +282,7 @@ def generate_daily_page(words_data, now_obj):
             {exp_html}
             {grid_html}
             {col_html}
-            
-            <div class="example-box">
-                <span class="meta-label">📰 真实语境 (In Context)</span>
-                <div class="sentence">{item['example']}</div>
-                <div class="source">{item['example_source']}</div>
-            </div>
+            {example_html}
         </div>
         """
 
@@ -318,13 +320,13 @@ def generate_daily_page(words_data, now_obj):
         .collocations-box {{ background: #f0f7ff; border-color: #e1efff; }}
         .exp-box {{ background: #fffcf0; border-color: #fce8b2; }}
         
-        /* 竖向列表样式 */
+        /* 竖向列表修改：改成块级流，中英文放在同一行！ */
         .vertical-list {{ list-style: none; padding: 0; margin: 0; }}
-        .vertical-list li {{ margin-bottom: 8px; font-size: 0.95rem; line-height: 1.4; display: flex; flex-direction: column; }}
+        .vertical-list li {{ margin-bottom: 6px; font-size: 0.95rem; line-height: 1.4; display: block; }}
         .vertical-list li:last-child {{ margin-bottom: 0; }}
-        .exp-list li {{ flex-direction: row; gap: 6px; color: #5c4d22; font-size: 0.9rem; }}
-        .en-word {{ color: #2c3e50; font-weight: 600; font-family: Georgia, serif; font-size: 1.05rem; }}
-        .trans-zh {{ color: #7f8c8d; font-size: 0.85rem; margin-top: 2px; }}
+        .exp-list li {{ color: #5c4d22; font-size: 0.9rem; }}
+        .en-word {{ color: #2c3e50; font-weight: 600; font-family: Georgia, serif; font-size: 1.05rem; margin-right: 6px; }}
+        .trans-zh {{ color: #7f8c8d; font-size: 0.85rem; }}
         
         .example-box {{ border-top: 1px dashed var(--border); padding-top: 15px; margin-top: 15px; }}
         .sentence {{ font-size: 1.05rem; line-height: 1.6; color: var(--text); margin-bottom: 8px; font-family: Georgia, serif; }}

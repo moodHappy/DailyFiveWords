@@ -21,6 +21,30 @@ RSS_SOURCES = [
 ]
 # ==========================================
 
+def get_youdao_translation(word):
+    """使用有道免费 API 获取单词释义"""
+    try:
+        # 首选: jsonapi 接口，释义更全面
+        url = f"https://dict.youdao.com/jsonapi?q={word}"
+        res = requests.get(url, timeout=5).json()
+        if 'ec' in res and 'word' in res['ec']:
+            trs = res['ec']['word'][0]['trs']
+            zh_defs = [tr['tr'][0]['l']['i'][0] for tr in trs]
+            return "；".join(zh_defs)
+    except Exception:
+        pass
+    
+    try:
+        # 备选: suggest 接口
+        url = f"https://dict.youdao.com/suggest?q={word}&num=1&doctype=json"
+        res = requests.get(url, timeout=5).json()
+        if 'data' in res and 'entries' in res['data'] and len(res['data']['entries']) > 0:
+            return res['data']['entries'][0]['explain']
+    except Exception:
+        pass
+    
+    return None
+
 def translate_batch(text_list, translator):
     if not text_list: return []
     try:
@@ -35,7 +59,6 @@ def translate_batch(text_list, translator):
 def get_word_image(word):
     """自动获取单词相关的高清配图，优先维基百科，兜底维基共享资源"""
     try:
-        # 1. 尝试获取维基百科词条的首图
         wiki_url = f"https://en.wikipedia.org/w/api.php?action=query&titles={word}&prop=pageimages&format=json&pithumbsize=800"
         res = requests.get(wiki_url, timeout=5).json()
         pages = res.get('query', {}).get('pages', {})
@@ -45,7 +68,6 @@ def get_word_image(word):
     except: pass
 
     try:
-        # 2. 尝试从维基共享资源中搜索图片
         commons_url = f"https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch={word}&gsrnamespace=6&gsrlimit=1&prop=imageinfo&iiprop=url&format=json"
         res = requests.get(commons_url, timeout=5).json()
         pages = res.get('query', {}).get('pages', {})
@@ -54,7 +76,6 @@ def get_word_image(word):
             if image_info:
                 return image_info[0].get('url')
     except: pass
-
     return None
 
 def get_real_news_example(word):
@@ -163,7 +184,11 @@ def fetch_word_details(word, translator):
                 details["explanation"] = extra_meanings[:2]
     except: pass
 
-    if details["definition_en"] != "暂无英文释义":
+    # 使用有道免费 API 获取释义
+    youdao_zh = get_youdao_translation(word)
+    if youdao_zh:
+        details["definition_zh"] = youdao_zh
+    elif details["definition_en"] != "暂无英文释义":
         try:
             details["definition_zh"] = translator.translate(details["definition_en"])
         except: pass
@@ -191,8 +216,6 @@ def fetch_word_details(word, translator):
         details["collocations"] = [{"en": p, "zh": zh} for p, zh in zip(phrases, phrases_zh)]
 
     details["example"], details["example_source"] = get_guaranteed_example(word, dict_example_raw)
-
-    # 获取图片
     details["image_url"] = get_word_image(word)
 
     return details
@@ -256,13 +279,13 @@ def generate_daily_page(words_data, now_obj):
     filename = f"{now_obj.year}_{now_obj.month}_{now_obj.day}_{now_obj.strftime('%H%M')}.html"
     html_path = os.path.join(target_dir, filename)
     now_str = now_obj.strftime("%Y-%m-%d")
+    github_file_path = html_path.replace("\\", "/")
 
     cards_html = ""
     for idx, item in enumerate(words_data):
-        exp_list = "".join([f"<li>💡 <span class='trans-zh'>{e}</span></li>" for e in item['explanation']])
+        exp_list = "".join([f"<li class='editable-node'>💡 <span class='trans-zh'>{e}</span></li>" for e in item['explanation']])
         exp_html = f'<div class="meta-card exp-box"><span class="meta-label">📚 讲解与辨析 (Explanation)</span><ul class="vertical-list exp-list">{exp_list}</ul></div>'
 
-        # 动态图片区块
         img_html = ""
         if item['image_url']:
             img_html = f'<div class="meta-card img-box"><img src="{item["image_url"]}" alt="{item["word"]}"></div>'
@@ -285,27 +308,26 @@ def generate_daily_page(words_data, now_obj):
             example_html = f"""
             <div class="example-box">
                 <span class="meta-label">📰 真实语境 (In Context)</span>
-                <div class="sentence">{item['example']}</div>
-                <div class="source">{item['example_source']}</div>
+                <div class="sentence editable-node">{item['example']}</div>
+                <div class="source editable-node">{item['example_source']}</div>
             </div>
             """
 
-        # 默认折叠排版结构
         cards_html += f"""
         <div class="word-card">
             <div class="word-header" onclick="toggleCard({idx})" title="点击展开/折叠">
                 <div class="header-left">
                     <span class="word-index">#{idx+1}</span>
-                    <h2 class="word-title">{item['word']}</h2>
-                    <span class="phonetic">{item['phonetic']}</span>
+                    <h2 class="word-title editable-node">{item['word']}</h2>
+                    <span class="phonetic editable-node">{item['phonetic']}</span>
                 </div>
                 <div class="header-right" id="arrow-{idx}">▼</div>
             </div>
             
             <div id="content-{idx}" class="word-content" style="display: none;">
                 <div class="definition-box">
-                    <div class="def-zh">{item['definition_zh']}</div>
-                    <div class="def-en">{item['definition_en']}</div>
+                    <div class="def-zh editable-node">{item['definition_zh']}</div>
+                    <div class="def-en editable-node">{item['definition_en']}</div>
                 </div>
                 
                 {exp_html}
@@ -371,9 +393,25 @@ def generate_daily_page(words_data, now_obj):
         .hl-word {{ color: var(--accent); font-weight: bold; text-decoration: underline; text-decoration-color: rgba(0,102,204,0.3); text-decoration-thickness: 3px; }}
         .source {{ font-size: 0.8rem; color: var(--muted); text-align: right; font-weight: bold; }}
         
-        @media (max-width: 500px) {{
-            .grid-layout {{ grid-template-columns: 1fr; }}
+        /* 编辑模式样式 */
+        .editing .editable-node[contenteditable="true"] {{
+            outline: 2px dashed var(--accent);
+            padding: 2px 4px;
+            background: rgba(0,102,204,0.05);
+            border-radius: 4px;
+            cursor: text;
         }}
+        
+        #gh-save-btn {{
+            display: none; position: fixed; bottom: 20px; right: 20px;
+            background: #d35400; color: white; padding: 14px 24px;
+            border-radius: 30px; box-shadow: 0 4px 12px rgba(211,84,0,0.3);
+            z-index: 1000; font-weight: bold; font-size: 1rem;
+            cursor: pointer; transition: transform 0.2s;
+        }}
+        #gh-save-btn:active {{ transform: scale(0.95); }}
+        
+        @media (max-width: 500px) {{ .grid-layout {{ grid-template-columns: 1fr; }} }}
     </style>
 </head>
 <body>
@@ -386,7 +424,15 @@ def generate_daily_page(words_data, now_obj):
         {cards_html}
     </div>
     
+    <div id="gh-save-btn" onclick="saveToGitHub()">💾 保存到 GitHub</div>
+    
     <script>
+        // GitHub API 配置区
+        const GH_OWNER = 'moodHappy'; 
+        const GH_REPO = 'DailyFiveWords';
+        const FILE_PATH = '{github_file_path}'; 
+
+        // 展开折叠逻辑
         function toggleCard(index) {{
             const content = document.getElementById('content-' + index);
             const arrow = document.getElementById('arrow-' + index);
@@ -396,6 +442,100 @@ def generate_daily_page(words_data, now_obj):
             }} else {{
                 content.style.display = 'none';
                 arrow.style.transform = 'rotate(0deg)';
+            }}
+        }}
+
+        // 双指触摸切换编辑模式
+        let isEditing = false;
+        document.addEventListener('touchstart', function(e) {{
+            if (e.touches.length === 2) {{
+                e.preventDefault();
+                toggleEditMode();
+            }}
+        }}, {{passive: false}});
+
+        function toggleEditMode() {{
+            isEditing = !isEditing;
+            const editables = document.querySelectorAll('.editable-node');
+            const btn = document.getElementById('gh-save-btn');
+            
+            if (isEditing) {{
+                document.body.classList.add('editing');
+                editables.forEach(el => el.setAttribute('contenteditable', 'true'));
+                btn.style.display = 'block';
+                // 自动展开所有卡片方便编辑
+                document.querySelectorAll('.word-content').forEach(el => el.style.display = 'block');
+                document.querySelectorAll('.header-right').forEach(el => el.style.transform = 'rotate(180deg)');
+            }} else {{
+                document.body.classList.remove('editing');
+                editables.forEach(el => el.removeAttribute('contenteditable'));
+                btn.style.display = 'none';
+            }}
+        }}
+
+        // 提交修改到 GitHub
+        async function saveToGitHub() {{
+            const token = localStorage.getItem('gh_token') || prompt('请输入您的 GitHub Personal Access Token (仅首次需要):');
+            if (!token) return;
+            localStorage.setItem('gh_token', token);
+
+            const btn = document.getElementById('gh-save-btn');
+            btn.innerText = '正在保存...';
+
+            try {{
+                // 1. 清理编辑状态的 DOM 属性
+                document.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+                document.body.classList.remove('editing');
+                btn.style.display = 'none';
+
+                // 2. 获取文件的当前 SHA (更新文件必须提供)
+                const apiUrl = `https://api.github.com/repos/${{GH_OWNER}}/${{GH_REPO}}/contents/${{FILE_PATH}}`;
+                const getRes = await fetch(apiUrl, {{
+                    headers: {{ 'Authorization': `token ${{token}}` }}
+                }});
+                
+                let sha = '';
+                if (getRes.ok) {{
+                    const fileData = await getRes.json();
+                    sha = fileData.sha;
+                }}
+
+                // 3. 提取最新的完整 HTML 源码并 Base64 编码
+                const newHtml = '<!DOCTYPE html>\\n' + document.documentElement.outerHTML;
+                const encodedContent = btoa(unescape(encodeURIComponent(newHtml)));
+
+                // 4. 发起 PUT 请求提交更新
+                const putRes = await fetch(apiUrl, {{
+                    method: 'PUT',
+                    headers: {{
+                        'Authorization': `token ${{token}}`,
+                        'Content-Type': 'application/json'
+                    }},
+                    body: JSON.stringify({{
+                        message: `Update ${{FILE_PATH}} via Web Edit`,
+                        content: encodedContent,
+                        sha: sha || undefined
+                    }})
+                }});
+
+                if (putRes.ok) {{
+                    alert('✅ 成功同步至 GitHub！');
+                }} else {{
+                    const err = await putRes.json();
+                    if (err.message.includes("Bad credentials")) {{
+                        localStorage.removeItem('gh_token');
+                        alert('❌ Token 无效或已过期，请重新填写');
+                    }} else {{
+                        alert('❌ 保存失败: ' + err.message);
+                    }}
+                }}
+            }} catch (e) {{
+                alert('❌ 网络或请求错误: ' + e.message);
+            }} finally {{
+                // 恢复按钮状态
+                btn.style.display = isEditing ? 'block' : 'none';
+                btn.innerText = '💾 保存到 GitHub';
+                if (isEditing) toggleEditMode(); // 如果刚才处于编辑模式，则切回来以便继续
             }}
         }}
     </script>

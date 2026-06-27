@@ -1,0 +1,37 @@
+name: Daily 5 Words Learner
+
+on:
+  schedule:
+    # 20:00 UTC = 04:00 AM UTC+8 (北京时间)
+    - cron: '0 20 * * *'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests feedparser deep-translator
+
+      - name: Extract Words and Build UI
+        run: python build_daily_words.py
+
+      - name: Sync Progress to GitHub
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add docs/
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Vocabulary: Daily 5 words extracted and index updated" && git push)

@@ -24,7 +24,6 @@ RSS_SOURCES = [
 def get_youdao_translation(word):
     """使用有道免费 API 获取单词释义"""
     try:
-        # 首选: jsonapi 接口，释义更全面
         url = f"https://dict.youdao.com/jsonapi?q={word}"
         res = requests.get(url, timeout=5).json()
         if 'ec' in res and 'word' in res['ec']:
@@ -33,17 +32,53 @@ def get_youdao_translation(word):
             return "；".join(zh_defs)
     except Exception:
         pass
-    
+
     try:
-        # 备选: suggest 接口
         url = f"https://dict.youdao.com/suggest?q={word}&num=1&doctype=json"
         res = requests.get(url, timeout=5).json()
         if 'data' in res and 'entries' in res['data'] and len(res['data']['entries']) > 0:
             return res['data']['entries'][0]['explain']
     except Exception:
         pass
-    
+
     return None
+
+def get_youdao_collocations(word):
+    """使用有道 API 获取常见搭配和短语"""
+    try:
+        url = f"https://dict.youdao.com/jsonapi?q={word}"
+        res = requests.get(url, timeout=5).json()
+        collocations = []
+        
+        # 优先从 phrs (词组短语) 获取
+        if 'phrs' in res and 'phrs' in res['phrs']:
+            for item in res['phrs']['phrs']:
+                en = item.get('phr', {}).get('headword', {}).get('l', {}).get('i', '')
+                zh = ""
+                try:
+                    zh = item['phr']['trs'][0]['tr']['l']['i']
+                except:
+                    pass
+                if en:
+                    collocations.append({"en": en, "zh": zh})
+                if len(collocations) >= 5:
+                    break
+                    
+        # 兜底：如果没获取到，尝试从网络释义 (web_trans) 获取短语
+        if not collocations and 'web_trans' in res and 'web-translation' in res['web_trans']:
+            for item in res['web_trans']['web-translation']:
+                en = item.get('key', '')
+                zh = item.get('trans', [{}])[0].get('value', '') if item.get('trans') else ''
+                # 过滤掉和本词一模一样的结果，保留真正的短语搭配
+                if en and en.lower() != word.lower():
+                    collocations.append({"en": en, "zh": zh})
+                if len(collocations) >= 5:
+                    break
+                    
+        return collocations
+    except Exception as e:
+        print(f"搭配抓取异常: {e}")
+        return []
 
 def translate_batch(text_list, translator):
     if not text_list: return []
@@ -57,7 +92,7 @@ def translate_batch(text_list, translator):
     return text_list
 
 def get_word_image(word):
-    """自动获取单词相关的高清配图，优先维基百科，兜底维基共享资源"""
+    """自动获取单词相关的高清配图"""
     try:
         wiki_url = f"https://en.wikipedia.org/w/api.php?action=query&titles={word}&prop=pageimages&format=json&pithumbsize=800"
         res = requests.get(wiki_url, timeout=5).json()
@@ -123,22 +158,6 @@ def get_guaranteed_example(word, dict_example=None):
 
     return None, None
 
-def get_collocations(word):
-    try:
-        res = requests.get(f"https://api.datamuse.com/words?rel_bga={word}&max=30", timeout=5)
-        if res.status_code == 200:
-            valid_collocs = []
-            stop_words = {'and', 'or', 'the', 'a', 'an', 'in', 'on', 'at', 'to', 'by', 'of', 'for', 'with', 'is', 'are'}
-            for item in res.json():
-                cw = item['word'].strip()
-                if re.match(r'^[a-zA-Z]+$', cw) and len(cw) > 2 and cw.lower() not in stop_words:
-                    valid_collocs.append(cw)
-                if len(valid_collocs) >= 5:
-                    break
-            return valid_collocs
-    except: pass
-    return []
-
 def fetch_word_details(word, translator):
     details = {
         "word": word,
@@ -182,7 +201,7 @@ def fetch_word_details(word, translator):
                 details["explanation"] = extra_meanings[:2]
     except: pass
 
-    # 使用有道免费 API 获取释义
+    # 优先有道释义
     youdao_zh = get_youdao_translation(word)
     if youdao_zh:
         details["definition_zh"] = youdao_zh
@@ -207,11 +226,8 @@ def fetch_word_details(word, translator):
         ant_zh = translate_batch(details["antonyms"], translator)
         details["antonyms"] = [{"en": en, "zh": zh} for en, zh in zip(details["antonyms"], ant_zh)]
 
-    collocs_words = get_collocations(word)
-    if collocs_words:
-        phrases = [f"{word} {c}" for c in collocs_words]
-        phrases_zh = translate_batch(phrases, translator)
-        details["collocations"] = [{"en": p, "zh": zh} for p, zh in zip(phrases, phrases_zh)]
+    # 获取有道短语/搭配
+    details["collocations"] = get_youdao_collocations(word)
 
     details["example"], details["example_source"] = get_guaranteed_example(word, dict_example_raw)
     details["image_url"] = get_word_image(word)
@@ -219,12 +235,13 @@ def fetch_word_details(word, translator):
     return details
 
 def build_list_html(items):
+    """构建 HTML 列表，注入 editable-node 使全节点可编辑"""
     if not items:
         return ""
     html = '<ul class="vertical-list">'
     for item in items:
         zh_text = f'<span class="trans-zh">({item["zh"]})</span>' if item.get("zh") and item["zh"] != item["en"] else ''
-        html += f'<li><span class="en-word">{item["en"]}</span> {zh_text}</li>'
+        html += f'<li class="editable-node"><span class="en-word">{item["en"]}</span> {zh_text}</li>'
     html += '</ul>'
     return html
 
@@ -299,6 +316,7 @@ def generate_daily_page(words_data, now_obj):
             grid_html += '</div>'
 
         col_list = build_list_html(item['collocations'])
+        # 如果 col_list 为空，此处直接留空隐藏
         col_html = f'<div class="meta-card collocations-box"><span class="meta-label">🔗 常见搭配 (Collocations)</span>{col_list}</div>' if col_list else ""
 
         example_html = ""
@@ -310,6 +328,14 @@ def generate_daily_page(words_data, now_obj):
                 <div class="source editable-node">{item['example_source']}</div>
             </div>
             """
+
+        # 新增可编辑备注块
+        notes_html = f"""
+        <div class="meta-card notes-box" style="margin-top: 15px; background: #fafafa; border: 1px dashed #dcdde1;">
+            <span class="meta-label">📝 备注 (Notes)</span>
+            <div class="editable-node" style="min-height: 40px; color: #555; outline: none;">在此输入备注...</div>
+        </div>
+        """
 
         cards_html += f"""
         <div class="word-card">
@@ -332,6 +358,7 @@ def generate_daily_page(words_data, now_obj):
                 {grid_html}
                 {col_html}
                 {example_html}
+                {notes_html}
             </div>
         </div>
         """

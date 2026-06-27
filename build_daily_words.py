@@ -28,11 +28,10 @@ def translate_batch(text_list, translator):
         combined = " | ".join(text_list)
         translated = translator.translate(combined)
         if translated:
-            # 清理可能的空格
             return [t.strip() for t in translated.split("|")]
     except Exception as e:
         print(f"翻译失败: {e}")
-    return text_list # 失败则回退返回原文
+    return text_list
 
 def get_real_news_example(word):
     """第一层雷达：扫描今日全球新闻"""
@@ -47,8 +46,8 @@ def get_real_news_example(word):
                     sentences = re.split(r'(?<=[.!?]) +', clean_text)
                     for sentence in sentences:
                         if pattern.search(sentence):
-                            hl_sentence = pattern.sub(f"<span class='hl-word'>{word}</span>", sentence)
-                            return f"\"{hl_sentence}\"", f"🗞️ News: {entry.title[:30]}..."
+                            hl_sentence = pattern.sub(f"<span class='hl-word'>{word}</span>", sentence.strip())
+                            return f"\"{hl_sentence}\"", f"🗞️ News: {entry.title[:35]}..."
         except:
             continue
     return None, None
@@ -63,39 +62,36 @@ def get_wiki_example(word):
             sentences = re.split(r'(?<=[.!?]) +', snippet)
             for s in sentences:
                 if re.search(rf'\b{re.escape(word)}\b', s, re.IGNORECASE):
-                    hl_sentence = re.sub(rf'(\b{re.escape(word)}\b)', r"<span class='hl-word'>\1</span>", s, flags=re.IGNORECASE)
+                    hl_sentence = re.sub(rf'(\b{re.escape(word)}\b)', r"<span class='hl-word'>\1</span>", s.strip(), flags=re.IGNORECASE)
                     return f"\"{hl_sentence}...\"", f"📚 Wikipedia: {item['title']}"
     except: pass
     return None, None
 
 def get_guaranteed_example(word, dict_example=None):
     """整合三重例句雷达，绝不让例句为空"""
-    # 1. 搜今日新闻
     ex, src = get_real_news_example(word)
     if ex: return ex, src
     
-    # 2. 搜维基百科大库
     ex, src = get_wiki_example(word)
     if ex: return ex, src
     
-    # 3. 用字典自带例句兜底
     if dict_example and dict_example != "No example available.":
         hl_sentence = re.sub(rf'(\b{re.escape(word)}\b)', r"<span class='hl-word'>\1</span>", dict_example, flags=re.IGNORECASE)
         return f"\"{hl_sentence}\"", "📖 Dictionary Example"
         
-    # 4. 终极系统生成兜底 (几乎不会走到这一步)
-    return f"The word <span class='hl-word'>{word}</span> is a valuable addition to your advanced vocabulary.", "🤖 System Default"
+    return f"The word <span class='hl-word'>{word}</span> is often used in specific advanced contexts.", "🤖 System Generation"
 
 def get_collocations(word):
-    """获取强关联固定搭配，强行剔除无意义标点和虚词"""
+    """获取强关联固定搭配，强行剔除标点和无意义虚词"""
     try:
-        res = requests.get(f"https://api.datamuse.com/words?rel_bga={word}&max=20", timeout=5)
+        res = requests.get(f"https://api.datamuse.com/words?rel_bga={word}&max=30", timeout=5)
         if res.status_code == 200:
             valid_collocs = []
+            stop_words = {'and', 'or', 'the', 'a', 'an', 'in', 'on', 'at', 'to', 'by', 'of', 'for', 'with', 'is', 'are'}
             for item in res.json():
-                cw = item['word']
-                # 只保留纯字母单词，且过滤掉最没有意义的虚词
-                if re.match(r'^[a-z]+$', cw, re.IGNORECASE) and cw.lower() not in ['and', 'or', 'the', 'a', 'an']:
+                cw = item['word'].strip()
+                # 只保留纯字母单词，并且排除常见虚词
+                if re.match(r'^[a-zA-Z]+$', cw) and len(cw) > 2 and cw.lower() not in stop_words:
                     valid_collocs.append(cw)
                 if len(valid_collocs) >= 5:
                     break
@@ -110,6 +106,7 @@ def fetch_word_details(word, translator):
         "phonetic": "",
         "definition_en": "暂无英文释义",
         "definition_zh": "暂无中文释义",
+        "explanation": [], # 存放讲解和辨析
         "synonyms": [],
         "antonyms": [],
         "collocations": [],
@@ -118,8 +115,8 @@ def fetch_word_details(word, translator):
     }
     
     dict_example_raw = None
+    extra_meanings = []
     
-    # 1. 查字典获取基础数据
     try:
         res = requests.get(f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}", timeout=8)
         if res.status_code == 200:
@@ -127,27 +124,43 @@ def fetch_word_details(word, translator):
             details["phonetic"] = data.get("phonetics", [{}])[0].get("text", "")
             
             for meaning in data.get("meanings", []):
-                for def_obj in meaning.get("definitions", []):
+                pos = meaning.get("partOfSpeech", "unknown")
+                for i, def_obj in enumerate(meaning.get("definitions", [])):
                     if details["definition_en"] == "暂无英文释义":
                         details["definition_en"] = def_obj.get("definition", "")
+                    else:
+                        # 收集其他释义作为“讲解和辨析”素材
+                        extra_meanings.append(f"As {pos}: {def_obj.get('definition', '')}")
+                        
                     if "example" in def_obj and not dict_example_raw:
                         dict_example_raw = def_obj['example']
                 
-                # 提取前5个同反义词
                 details["synonyms"].extend(meaning.get("synonyms", []))
                 details["antonyms"].extend(meaning.get("antonyms", []))
                 
             details["synonyms"] = list(set(details["synonyms"]))[:5]
             details["antonyms"] = list(set(details["antonyms"]))[:5]
+            
+            # 生成讲解辨析
+            if extra_meanings:
+                # 只取前两条次要释义防止太长
+                details["explanation"] = extra_meanings[:2]
     except: pass
 
-    # 2. 翻译主释义
     if details["definition_en"] != "暂无英文释义":
         try:
             details["definition_zh"] = translator.translate(details["definition_en"])
         except: pass
 
-    # 3. 翻译同义词/反义词 (批量)
+    # 翻译“讲解和辨析”
+    if details["explanation"]:
+        try:
+            exp_zh = translate_batch(details["explanation"], translator)
+            details["explanation"] = exp_zh
+        except: pass
+    else:
+        details["explanation"] = ["该词含义较单一，多在固定搭配中直接使用。"]
+
     if details["synonyms"]:
         syn_zh = translate_batch(details["synonyms"], translator)
         details["synonyms"] = [{"en": en, "zh": zh} for en, zh in zip(details["synonyms"], syn_zh)]
@@ -156,27 +169,23 @@ def fetch_word_details(word, translator):
         ant_zh = translate_batch(details["antonyms"], translator)
         details["antonyms"] = [{"en": en, "zh": zh} for en, zh in zip(details["antonyms"], ant_zh)]
 
-    # 4. 抓取并翻译固定搭配
     collocs_words = get_collocations(word)
     if collocs_words:
-        # 拼接成短语再翻译，准确率更高
         phrases = [f"{word} {c}" for c in collocs_words]
         phrases_zh = translate_batch(phrases, translator)
         details["collocations"] = [{"en": p, "zh": zh} for p, zh in zip(phrases, phrases_zh)]
 
-    # 5. 调用三重雷达抓取例句
     details["example"], details["example_source"] = get_guaranteed_example(word, dict_example_raw)
         
     return details
 
-def build_list_html(items, empty_text="暂无数据"):
-    """辅助渲染竖向带翻译的列表"""
+def build_list_html(items):
+    """辅助渲染竖向带翻译的列表，如果为空返回空字符串"""
     if not items:
-        return f'<div class="empty-list">{empty_text}</div>'
+        return ""
     html = '<ul class="vertical-list">'
     for item in items:
-        # 如果翻译和英文一样（API抽风等），就不重复显示
-        zh_text = f'<span class="trans-zh">({item["zh"]})</span>' if item["zh"] and item["zh"] != item["en"] else ''
+        zh_text = f'<span class="trans-zh">({item["zh"]})</span>' if item.get("zh") and item["zh"] != item["en"] else ''
         html += f'<li><span class="en-word">{item["en"]}</span> {zh_text}</li>'
     html += '</ul>'
     return html
@@ -185,7 +194,6 @@ def main():
     os.makedirs(BASE_DIR, exist_ok=True)
     now_obj = datetime.now(TZ_UTC_8)
     
-    # 1. 读取远端总词库
     print("📥 正在拉取 Collins 词库...")
     try:
         res = requests.get(WORDS_URL, timeout=10)
@@ -195,13 +203,11 @@ def main():
         print(f"❌ 词库加载失败: {e}")
         return
 
-    # 2. 读取本地学习进度
     learned_words = []
     if os.path.exists(STATE_FILE):
         with open(STATE_FILE, "r", encoding="utf-8") as f:
             learned_words = json.load(f).get("learned", [])
 
-    # 3. 挑选今日新词
     today_words = []
     for w in all_words:
         if w not in learned_words:
@@ -210,23 +216,19 @@ def main():
             break
             
     if not today_words:
-        print("🎉 恭喜！词库已经全部学完！")
+        print("🎉 恭喜！Collins 词库已经全部学完！")
         return
 
-    # 4. 获取多维单词数据
     print(f"🎯 今日目标词汇: {', '.join(today_words)}")
     translator = GoogleTranslator(source='en', target='zh-CN')
     words_data = [fetch_word_details(w, translator) for w in today_words]
 
-    # 5. 生成每日详情页
     generate_daily_page(words_data, now_obj)
     
-    # 6. 更新进度并保存
     learned_words.extend(today_words)
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump({"learned": learned_words}, f, ensure_ascii=False, indent=2)
         
-    # 7. 重建日历枢纽
     generate_index()
 
 def generate_daily_page(words_data, now_obj):
@@ -240,10 +242,23 @@ def generate_daily_page(words_data, now_obj):
 
     cards_html = ""
     for idx, item in enumerate(words_data):
-        syn_html = build_list_html(item['synonyms'])
-        ant_html = build_list_html(item['antonyms'])
-        col_html = build_list_html(item['collocations'])
+        # 构建各个数据块，利用条件判断自动隐藏空区块
+        exp_list = "".join([f"<li>💡 {e}</li>" for e in item['explanation']])
+        exp_html = f'<div class="meta-card exp-box"><span class="meta-label">📚 讲解与辨析 (Explanation)</span><ul class="vertical-list exp-list">{exp_list}</ul></div>'
         
+        syn_list = build_list_html(item['synonyms'])
+        ant_list = build_list_html(item['antonyms'])
+        
+        grid_html = ""
+        if syn_list or ant_list:
+            grid_html += '<div class="grid-layout">'
+            if syn_list: grid_html += f'<div class="meta-card"><span class="meta-label">近义词 (Synonyms)</span>{syn_list}</div>'
+            if ant_list: grid_html += f'<div class="meta-card"><span class="meta-label">反义词 (Antonyms)</span>{ant_list}</div>'
+            grid_html += '</div>'
+            
+        col_list = build_list_html(item['collocations'])
+        col_html = f'<div class="meta-card collocations-box"><span class="meta-label">🔗 常见搭配 (Collocations)</span>{col_list}</div>' if col_list else ""
+
         cards_html += f"""
         <div class="word-card">
             <div class="word-header">
@@ -257,21 +272,9 @@ def generate_daily_page(words_data, now_obj):
                 <div class="def-en">{item['definition_en']}</div>
             </div>
             
-            <div class="grid-layout">
-                <div class="meta-card">
-                    <span class="meta-label">近义词 (Synonyms)</span>
-                    {syn_html}
-                </div>
-                <div class="meta-card">
-                    <span class="meta-label">反义词 (Antonyms)</span>
-                    {ant_html}
-                </div>
-            </div>
-            
-            <div class="meta-card collocations-box">
-                <span class="meta-label">🔗 常见搭配 (Collocations)</span>
-                {col_html}
-            </div>
+            {exp_html}
+            {grid_html}
+            {col_html}
             
             <div class="example-box">
                 <span class="meta-label">📰 真实语境 (In Context)</span>
@@ -311,21 +314,26 @@ def generate_daily_page(words_data, now_obj):
         .meta-label {{ display: block; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 4px; }}
         
         .grid-layout {{ display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }}
-        .meta-card {{ background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #f0f0f0; }}
-        .collocations-box {{ background: #f0f7ff; border-color: #e1efff; margin-bottom: 15px; }}
+        .meta-card {{ background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #f0f0f0; margin-bottom: 15px; }}
+        .collocations-box {{ background: #f0f7ff; border-color: #e1efff; }}
+        .exp-box {{ background: #fffcf0; border-color: #fce8b2; }}
         
         /* 竖向列表样式 */
         .vertical-list {{ list-style: none; padding: 0; margin: 0; }}
         .vertical-list li {{ margin-bottom: 8px; font-size: 0.95rem; line-height: 1.4; display: flex; flex-direction: column; }}
         .vertical-list li:last-child {{ margin-bottom: 0; }}
-        .en-word {{ color: #2c3e50; font-weight: 600; }}
-        .trans-zh {{ color: #7f8c8d; font-size: 0.85rem; }}
-        .empty-list {{ font-size: 0.9rem; color: #bdc3c7; font-style: italic; }}
+        .exp-list li {{ flex-direction: row; gap: 6px; color: #5c4d22; font-size: 0.9rem; }}
+        .en-word {{ color: #2c3e50; font-weight: 600; font-family: Georgia, serif; font-size: 1.05rem; }}
+        .trans-zh {{ color: #7f8c8d; font-size: 0.85rem; margin-top: 2px; }}
         
-        .example-box {{ border-top: 1px dashed var(--border); padding-top: 15px; }}
+        .example-box {{ border-top: 1px dashed var(--border); padding-top: 15px; margin-top: 15px; }}
         .sentence {{ font-size: 1.05rem; line-height: 1.6; color: var(--text); margin-bottom: 8px; font-family: Georgia, serif; }}
         .hl-word {{ color: var(--accent); font-weight: bold; text-decoration: underline; text-decoration-color: rgba(0,102,204,0.3); text-decoration-thickness: 3px; }}
         .source {{ font-size: 0.8rem; color: var(--muted); text-align: right; font-weight: bold; }}
+        
+        @media (max-width: 500px) {{
+            .grid-layout {{ grid-template-columns: 1fr; }}
+        }}
     </style>
 </head>
 <body>

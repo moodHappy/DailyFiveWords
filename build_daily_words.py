@@ -22,7 +22,6 @@ RSS_SOURCES = [
 # ==========================================
 
 def translate_batch(text_list, translator):
-    """批量翻译辅助函数，避免频繁请求被拦截"""
     if not text_list: return []
     try:
         combined = " | ".join(text_list)
@@ -33,8 +32,32 @@ def translate_batch(text_list, translator):
         print(f"翻译失败: {e}")
     return text_list
 
+def get_word_image(word):
+    """自动获取单词相关的高清配图，优先维基百科，兜底维基共享资源"""
+    try:
+        # 1. 尝试获取维基百科词条的首图
+        wiki_url = f"https://en.wikipedia.org/w/api.php?action=query&titles={word}&prop=pageimages&format=json&pithumbsize=800"
+        res = requests.get(wiki_url, timeout=5).json()
+        pages = res.get('query', {}).get('pages', {})
+        for page_id, page_data in pages.items():
+            if 'thumbnail' in page_data:
+                return page_data['thumbnail']['source']
+    except: pass
+    
+    try:
+        # 2. 尝试从维基共享资源中搜索图片
+        commons_url = f"https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch={word}&gsrnamespace=6&gsrlimit=1&prop=imageinfo&iiprop=url&format=json"
+        res = requests.get(commons_url, timeout=5).json()
+        pages = res.get('query', {}).get('pages', {})
+        for page_id, page_data in pages.items():
+            image_info = page_data.get('imageinfo', [])
+            if image_info:
+                return image_info[0].get('url')
+    except: pass
+    
+    return None
+
 def get_real_news_example(word):
-    """第一层雷达：扫描今日全球新闻"""
     pattern = re.compile(rf'\b{re.escape(word)}\b', re.IGNORECASE)
     for url in RSS_SOURCES:
         try:
@@ -53,7 +76,6 @@ def get_real_news_example(word):
     return None, None
 
 def get_wiki_example(word):
-    """第二层雷达：全网 Wikipedia 检索兜底"""
     try:
         wiki_url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=%22{word}%22&utf8=&format=json&srlimit=3"
         res = requests.get(wiki_url, timeout=5).json()
@@ -68,7 +90,6 @@ def get_wiki_example(word):
     return None, None
 
 def get_guaranteed_example(word, dict_example=None):
-    """整合三重例句雷达，找不到真的就返回空，绝不用废话凑数"""
     ex, src = get_real_news_example(word)
     if ex: return ex, src
     
@@ -79,11 +100,9 @@ def get_guaranteed_example(word, dict_example=None):
         hl_sentence = re.sub(rf'(\b{re.escape(word)}\b)', r"<span class='hl-word'>\1</span>", dict_example, flags=re.IGNORECASE)
         return f"\"{hl_sentence}\"", "📖 Dictionary Example"
         
-    # 如果三大途径全军覆没，返回空，让前端直接把这个区块隐身！
     return None, None
 
 def get_collocations(word):
-    """获取强关联固定搭配，强行剔除标点和无意义虚词"""
     try:
         res = requests.get(f"https://api.datamuse.com/words?rel_bga={word}&max=30", timeout=5)
         if res.status_code == 200:
@@ -100,7 +119,6 @@ def get_collocations(word):
     return []
 
 def fetch_word_details(word, translator):
-    """综合查词与翻译引擎"""
     details = {
         "word": word,
         "phonetic": "",
@@ -111,7 +129,8 @@ def fetch_word_details(word, translator):
         "antonyms": [],
         "collocations": [],
         "example": None,
-        "example_source": None
+        "example_source": None,
+        "image_url": None
     }
     
     dict_example_raw = None
@@ -172,17 +191,18 @@ def fetch_word_details(word, translator):
         details["collocations"] = [{"en": p, "zh": zh} for p, zh in zip(phrases, phrases_zh)]
 
     details["example"], details["example_source"] = get_guaranteed_example(word, dict_example_raw)
+    
+    # 获取图片
+    details["image_url"] = get_word_image(word)
         
     return details
 
 def build_list_html(items):
-    """渲染同一行的英文+中文释义结构"""
     if not items:
         return ""
     html = '<ul class="vertical-list">'
     for item in items:
         zh_text = f'<span class="trans-zh">({item["zh"]})</span>' if item.get("zh") and item["zh"] != item["en"] else ''
-        # 英文和中文直接内联，不强制换行
         html += f'<li><span class="en-word">{item["en"]}</span> {zh_text}</li>'
     html += '</ul>'
     return html
@@ -242,6 +262,11 @@ def generate_daily_page(words_data, now_obj):
         exp_list = "".join([f"<li>💡 <span class='trans-zh'>{e}</span></li>" for e in item['explanation']])
         exp_html = f'<div class="meta-card exp-box"><span class="meta-label">📚 讲解与辨析 (Explanation)</span><ul class="vertical-list exp-list">{exp_list}</ul></div>'
         
+        # 动态图片区块
+        img_html = ""
+        if item['image_url']:
+            img_html = f'<div class="meta-card img-box"><img src="{item["image_url"]}" alt="{item["word"]}"></div>'
+
         syn_list = build_list_html(item['synonyms'])
         ant_list = build_list_html(item['antonyms'])
         
@@ -255,7 +280,6 @@ def generate_daily_page(words_data, now_obj):
         col_list = build_list_html(item['collocations'])
         col_html = f'<div class="meta-card collocations-box"><span class="meta-label">🔗 常见搭配 (Collocations)</span>{col_list}</div>' if col_list else ""
 
-        # 例句板块的动态隐藏逻辑
         example_html = ""
         if item['example']:
             example_html = f"""
@@ -266,23 +290,30 @@ def generate_daily_page(words_data, now_obj):
             </div>
             """
 
+        # 默认折叠排版结构
         cards_html += f"""
         <div class="word-card">
-            <div class="word-header">
-                <span class="word-index">#{idx+1}</span>
-                <h2 class="word-title">{item['word']}</h2>
-                <span class="phonetic">{item['phonetic']}</span>
+            <div class="word-header" onclick="toggleCard({idx})" title="点击展开/折叠">
+                <div class="header-left">
+                    <span class="word-index">#{idx+1}</span>
+                    <h2 class="word-title">{item['word']}</h2>
+                    <span class="phonetic">{item['phonetic']}</span>
+                </div>
+                <div class="header-right" id="arrow-{idx}">▼</div>
             </div>
             
-            <div class="definition-box">
-                <div class="def-zh">{item['definition_zh']}</div>
-                <div class="def-en">{item['definition_en']}</div>
+            <div id="content-{idx}" class="word-content" style="display: none;">
+                <div class="definition-box">
+                    <div class="def-zh">{item['definition_zh']}</div>
+                    <div class="def-en">{item['definition_en']}</div>
+                </div>
+                
+                {exp_html}
+                {img_html}
+                {grid_html}
+                {col_html}
+                {example_html}
             </div>
-            
-            {exp_html}
-            {grid_html}
-            {col_html}
-            {example_html}
         </div>
         """
 
@@ -291,7 +322,7 @@ def generate_daily_page(words_data, now_obj):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Daily 5 Words | {now_str}</title>
+    <title>Daily Five Words | {now_str}</title>
     <style>
         :root {{ --bg: #f5f5f7; --card: #ffffff; --text: #1d1d1f; --muted: #86868b; --accent: #0066cc; --border: #e5e5ea; }}
         body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }}
@@ -303,11 +334,16 @@ def generate_daily_page(words_data, now_obj):
         .header h1 {{ margin: 0 0 5px 0; font-size: 1.8rem; color: #1a252f; }}
         .header p {{ margin: 0; color: var(--muted); font-size: 0.9rem; font-weight: bold; }}
         
-        .word-card {{ background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 22px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }}
-        .word-header {{ display: flex; align-items: center; gap: 12px; margin-bottom: 15px; flex-wrap: wrap; }}
+        .word-card {{ background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 22px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); transition: all 0.2s ease; }}
+        .word-header {{ display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }}
+        .header-left {{ display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }}
+        .header-right {{ font-size: 1.2rem; color: var(--muted); transition: transform 0.3s ease; }}
+        
         .word-index {{ background: var(--accent); color: #fff; padding: 2px 8px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; }}
         .word-title {{ font-size: 2.2rem; margin: 0; color: #d35400; text-transform: lowercase; font-family: Georgia, serif; }}
         .phonetic {{ font-size: 1.1rem; color: var(--muted); font-family: monospace; }}
+        
+        .word-content {{ margin-top: 18px; padding-top: 15px; border-top: 1px solid #f0f0f0; }}
         
         .definition-box {{ background: #fdfbf7; border-left: 4px solid var(--accent); padding: 12px 15px; border-radius: 0 8px 8px 0; margin-bottom: 15px; }}
         .def-zh {{ font-size: 1.1rem; font-weight: bold; color: #2c3e50; margin-bottom: 5px; }}
@@ -320,7 +356,9 @@ def generate_daily_page(words_data, now_obj):
         .collocations-box {{ background: #f0f7ff; border-color: #e1efff; }}
         .exp-box {{ background: #fffcf0; border-color: #fce8b2; }}
         
-        /* 竖向列表修改：改成块级流，中英文放在同一行！ */
+        .img-box {{ padding: 0; overflow: hidden; display: flex; justify-content: center; background: #fafafa; border: none; }}
+        .img-box img {{ max-width: 100%; height: auto; border-radius: 8px; }}
+        
         .vertical-list {{ list-style: none; padding: 0; margin: 0; }}
         .vertical-list li {{ margin-bottom: 6px; font-size: 0.95rem; line-height: 1.4; display: block; }}
         .vertical-list li:last-child {{ margin-bottom: 0; }}
@@ -342,11 +380,25 @@ def generate_daily_page(words_data, now_obj):
     <div class="nav-back"><a href="../../index.html">🔙 返回学习日历</a></div>
     <div class="container">
         <div class="header">
-            <h1>Daily 5 Words</h1>
+            <h1>Daily Five Words</h1>
             <p>📝 {now_str} · 进阶词汇集训</p>
         </div>
         {cards_html}
     </div>
+    
+    <script>
+        function toggleCard(index) {{
+            const content = document.getElementById('content-' + index);
+            const arrow = document.getElementById('arrow-' + index);
+            if (content.style.display === 'none') {{
+                content.style.display = 'block';
+                arrow.style.transform = 'rotate(180deg)';
+            }} else {{
+                content.style.display = 'none';
+                arrow.style.transform = 'rotate(0deg)';
+            }}
+        }}
+    </script>
 </body>
 </html>"""
     with open(html_path, "w", encoding="utf-8") as f:
@@ -389,7 +441,7 @@ def generate_index():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>词汇进阶学习日历</title>
+    <title>Daily Five Words - 学习日历</title>
     <style>
         :root { --bg: #f5f5f7; --text: #333; --muted: #888; --primary: #0066cc; --border: #e0e0e0; --card: #fff; }
         body, html { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif; -webkit-font-smoothing: antialiased; background: var(--bg); margin: 0; padding: 0; color: var(--text); height: 100%; }
@@ -426,7 +478,7 @@ def generate_index():
 </head>
 <body>
     <div class="header-panel">
-        <h1>Collins Vocabulary</h1>
+        <h1>Daily Five Words</h1>
         <p>每日 5 词集训日历</p>
     </div>
     <div class="container">

@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Daily Five Words | 2026-07-01</title>
+    <style>
+        :root { --bg: #f5f5f7; --card: #ffffff; --text: #1d1d1f; --muted: #86868b; --accent: #0066cc; --border: #e5e5ea; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+        .nav-back { padding: 15px; text-align: center; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 5px rgba(0,0,0,0.02); }
+        .nav-back a { text-decoration: none; color: white; background: var(--accent); padding: 8px 20px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; }
+        
+        .container { max-width: 600px; margin: 0 auto; padding: 20px 15px 50px 15px; box-sizing: border-box; }
+        .header { text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px dashed var(--border); }
+        .header h1 { margin: 0 0 5px 0; font-size: 1.8rem; color: #1a252f; }
+        .header p { margin: 0; color: var(--muted); font-size: 0.9rem; font-weight: bold; }
+        
+        .word-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 22px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); transition: all 0.2s ease; }
+        .word-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+        .header-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .header-right { font-size: 1.2rem; color: var(--muted); transition: transform 0.3s ease; }
+        
+        .word-index { background: var(--accent); color: #fff; padding: 2px 8px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; }
+        .word-title { font-size: 2.2rem; margin: 0; color: #d35400; text-transform: lowercase; font-family: Georgia, serif; }
+        
+        .word-content { margin-top: 18px; padding-top: 15px; border-top: 1px solid #f0f0f0; }
+        
+        .definition-box { background: #fdfbf7; border-left: 4px solid var(--accent); padding: 12px 15px; border-radius: 0 8px 8px 0; margin-bottom: 15px; }
+        .def-zh { font-size: 1.1rem; font-weight: bold; color: #2c3e50; margin-bottom: 5px; }
+        .def-en { font-size: 0.95rem; color: var(--muted); font-style: italic; }
+        
+        .meta-label { display: block; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+        
+        .grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .meta-card { background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #f0f0f0; margin-bottom: 15px; }
+        .collocations-box { background: #f0f7ff; border-color: #e1efff; }
+        .exp-box { background: #fffcf0; border-color: #fce8b2; }
+        
+        .img-box { padding: 0; overflow: hidden; display: flex; justify-content: center; background: #fafafa; border: none; }
+        .img-box img { max-width: 100%; height: auto; border-radius: 8px; }
+        
+        .vertical-list { list-style: none; padding: 0; margin: 0; }
+        .vertical-list li { margin-bottom: 6px; font-size: 0.95rem; line-height: 1.4; display: block; }
+        .vertical-list li:last-child { margin-bottom: 0; }
+        .exp-list li { color: #5c4d22; font-size: 0.9rem; }
+        .en-word { color: #2c3e50; font-weight: 600; font-family: Georgia, serif; font-size: 1.05rem; margin-right: 6px; }
+        .trans-zh { color: #7f8c8d; font-size: 0.85rem; }
+        
+        .example-box { border-top: 1px dashed var(--border); padding-top: 15px; margin-top: 15px; }
+        .sentence { font-size: 1.05rem; line-height: 1.6; color: var(--text); margin-bottom: 8px; font-family: Georgia, serif; }
+        .hl-word { color: var(--accent); font-weight: bold; text-decoration: underline; text-decoration-color: rgba(0,102,204,0.3); text-decoration-thickness: 3px; }
+        .source { font-size: 0.8rem; color: var(--muted); text-align: right; font-weight: bold; }
+        
+        /* 编辑模式样式 */
+        .editing .editable-node[contenteditable="true"] {
+            outline: 2px dashed var(--accent);
+            padding: 2px 4px;
+            background: rgba(0,102,204,0.05);
+            border-radius: 4px;
+            cursor: text;
+        }
+        
+        #gh-save-btn {
+            display: none; position: fixed; bottom: 20px; right: 20px;
+            background: #d35400; color: white; padding: 14px 24px;
+            border-radius: 30px; box-shadow: 0 4px 12px rgba(211,84,0,0.3);
+            z-index: 1000; font-weight: bold; font-size: 1rem;
+            cursor: pointer; transition: transform 0.2s;
+        }
+        #gh-save-btn:active { transform: scale(0.95); }
+        
+        @media (max-width: 500px) { .grid-layout { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="nav-back"><a href="../../index.html">🔙 返回学习日历</a></div>
+    <div class="container">
+        <div class="header">
+            <h1>Daily Five Words</h1>
+            <p>📝 2026-07-01 · 进阶词汇集训</p>
+        </div>
+        
+        <div class="word-card">
+            <div class="word-header" onclick="toggleCard(0)" title="点击展开/折叠">
+                <div class="header-left">
+                    <span class="word-index">#1</span>
+                    <h2 class="word-title editable-node">ambiguity</h2>
+                </div>
+                <div class="header-right" id="arrow-0">▼</div>
+            </div>
+            
+            <div id="content-0" class="word-content" style="display: none;">
+                <div class="definition-box">
+                    <div class="def-zh editable-node">n. 模棱两可，不明确；含混不清的语句；一语多义；暧昧，难以理解的感情（或想法）</div>
+                    <div class="def-en editable-node">Something, particularly words and sentences, that is open to more than one interpretation, explanation or meaning, if that meaning etc cannot be determined from its context.</div>
+                </div>
+                
+                <div class="meta-card exp-box"><span class="meta-label">📚 讲解与辨析 (Explanation)</span><ul class="vertical-list exp-list"><li class='editable-node'>💡 <span class='trans-zh'>作为名词：模棱两可的状态。</span></li></ul></div>
+                
+                <div class="grid-layout"><div class="meta-card"><span class="meta-label">近义词 (Synonyms)</span><ul class="vertical-list"><li class="editable-node"><span class="en-word">ambiguousness</span> <span class="trans-zh">(歧义)</span></li><li class="editable-node"><span class="en-word">weasel word</span> <span class="trans-zh">(黄鼠狼词)</span></li><li class="editable-node"><span class="en-word">polysemy</span> <span class="trans-zh">(一词多义不精确)</span></li></ul></div><div class="meta-card"><span class="meta-label">反义词 (Antonyms)</span><ul class="vertical-list"><li class="editable-node"><span class="en-word">unambiguity</span> <span class="trans-zh">(明确性)</span></li></ul></div></div>
+                <div class="meta-card collocations-box"><span class="meta-label">🔗 常见搭配 (Collocations)</span><ul class="vertical-list"><li class="editable-node"><span class="en-word">ambiguity function</span> <span class="trans-zh">(模糊度函数；含糊函数)</span></li><li class="editable-node"><span class="en-word">role ambiguity</span> <span class="trans-zh">(角色模糊；角色不明)</span></li><li class="editable-node"><span class="en-word">lexical ambiguity</span> <span class="trans-zh">(词法多义性；词法的歧义性)</span></li></ul></div>
+                
+            <div class="example-box">
+                <span class="meta-label">📰 真实语境 (In Context)</span>
+                <div class="sentence editable-node">"His speech was made with such great <span class='hl-word'>ambiguity</span> that neither supporter nor opponent could be certain of his true position."</div>
+                <div class="source editable-node">📖 Dictionary Example</div>
+            </div>
+            
+                
+        <div class="meta-card notes-box" style="margin-top: 15px; background: #fafafa; border: 1px dashed #dcdde1;">
+            <span class="meta-label">📝 备注 (Notes)</span>
+            <div class="editable-node" style="min-height: 40px; color: #555; outline: none;">在此输入备注...</div>
+        </div>
+        
+            </div>
+        </div>
+        
+        <div class="word-card">
+            <div class="word-header" onclick="toggleCard(1)" title="点击展开/折叠">
+                <div class="header-left">
+                    <span class="word-index">#2</span>
+                    <h2 class="word-title editable-node">filler</h2>
+                </div>
+                <div class="header-right" id="arrow-1">▼</div>
+            </div>
+            
+            <div id="content-1" class="word-content" style="display: none;">
+                <div class="definition-box">
+                    <div class="def-zh editable-node">n. （杂志等的）补白；装填者；装填物；充填器；n. （Filler）人名；（西）菲列尔；（英、德、俄、捷、匈）菲勒</div>
+                    <div class="def-en editable-node">One who fills.</div>
+                </div>
+                
+                <div class="meta-card exp-box"><span class="meta-label">📚 讲解与辨析 (Explanation)</span><ul class="vertical-list exp-list"><li class='editable-node'>💡 <span class='trans-zh'>作为名词：为填充空间或增加重量或尺寸而添加的东西。</span></li><li class='editable-node'>💡 <span class='trans-zh'>作为名词：用于填充间隙、裂缝或孔隙的任何半固体物质。</span></li></ul></div>
+                
+                
+                <div class="meta-card collocations-box"><span class="meta-label">🔗 常见搭配 (Collocations)</span><ul class="vertical-list"><li class="editable-node"><span class="en-word">filler metal</span> <span class="trans-zh">(填充金属；焊料， 焊丝)</span></li><li class="editable-node"><span class="en-word">inorganic filler</span> <span class="trans-zh">(无机填充剂)</span></li><li class="editable-node"><span class="en-word">reinforcing filler</span> <span class="trans-zh">(补强剂；增强填料；增强填充料)</span></li><li class="editable-node"><span class="en-word">mineral filler</span> <span class="trans-zh">(矿物填料；无机填料)</span></li><li class="editable-node"><span class="en-word">brazing filler metal</span> <span class="trans-zh">(钎料；硬钎料)</span></li></ul></div>
+                
+                
+        <div class="meta-card notes-box" style="margin-top: 15px; background: #fafafa; border: 1px dashed #dcdde1;">
+            <span class="meta-label">📝 备注 (Notes)</span>
+            <div class="editable-node" style="min-height: 40px; color: #555; outline: none;">在此输入备注...</div>
+        </div>
+        
+            </div>
+        </div>
+        
+        <div class="word-card">
+            <div class="word-header" onclick="toggleCard(2)" title="点击展开/折叠">
+                <div class="header-left">
+                    <span class="word-index">#3</span>
+                    <h2 class="word-title editable-node">discriminatory</h2>
+                </div>
+                <div class="header-right" id="arrow-2">▼</div>
+            </div>
+            
+            <div id="content-2" class="word-content" style="display: none;">
+                <div class="definition-box">
+                    <div class="def-zh editable-node">adj. 区别对待的，歧视的，不公平的</div>
+                    <div class="def-en editable-node">Of or pertaining to discrimination (in all senses).</div>
+                </div>
+                
+                <div class="meta-card exp-box"><span class="meta-label">📚 讲解与辨析 (Explanation)</span><ul class="vertical-list exp-list"><li class='editable-node'>💡 <span class='trans-zh'>作为形容词：表现出偏见或偏见。</span></li></ul></div>
+                
+                
+                <div class="meta-card collocations-box"><span class="meta-label">🔗 常见搭配 (Collocations)</span><ul class="vertical-list"><li class="editable-node"><span class="en-word">discriminatory analysis</span> <span class="trans-zh">(判别分析；鉴别分析)</span></li></ul></div>
+                
+                
+        <div class="meta-card notes-box" style="margin-top: 15px; background: #fafafa; border: 1px dashed #dcdde1;">
+            <span class="meta-label">📝 备注 (Notes)</span>
+            <div class="editable-node" style="min-height: 40px; color: #555; outline: none;">在此输入备注...</div>
+        </div>
+        
+            </div>
+        </div>
+        
+        <div class="word-card">
+            <div class="word-header" onclick="toggleCard(3)" title="点击展开/折叠">
+                <div class="header-left">
+                    <span class="word-index">#4</span>
+                    <h2 class="word-title editable-node">astronomical</h2>
+                </div>
+                <div class="header-right" id="arrow-3">▼</div>
+            </div>
+            
+            <div id="content-3" class="word-content" style="display: none;">
+                <div class="definition-box">
+                    <div class="def-zh editable-node">adj. 天文（学）的，天体的；（数量、价格或收费）天文数字的，极其巨大的</div>
+                    <div class="def-en editable-node">Of or relating to astronomy.</div>
+                </div>
+                
+                <div class="meta-card exp-box"><span class="meta-label">📚 讲解与辨析 (Explanation)</span><ul class="vertical-list exp-list"><li class='editable-node'>💡 <span class='trans-zh'>作为形容词：非常大；规模巨大。</span></li></ul></div>
+                
+                <div class="grid-layout"><div class="meta-card"><span class="meta-label">近义词 (Synonyms)</span><ul class="vertical-list"><li class="editable-node"><span class="en-word">astronomic</span> <span class="trans-zh">(天文的)</span></li></ul></div></div>
+                <div class="meta-card collocations-box"><span class="meta-label">🔗 常见搭配 (Collocations)</span><ul class="vertical-list"><li class="editable-node"><span class="en-word">astronomical observatory</span> <span class="trans-zh">(天文台)</span></li><li class="editable-node"><span class="en-word">astronomical telescope</span> <span class="trans-zh">(n. 天文望远镜（等于Kepler telescope）)</span></li><li class="editable-node"><span class="en-word">international astronomical union</span> <span class="trans-zh">(国际天文联合会)</span></li><li class="editable-node"><span class="en-word">astronomical figures</span> <span class="trans-zh">(天文数字)</span></li><li class="editable-node"><span class="en-word">astronomical body</span> <span class="trans-zh">(天体)</span></li></ul></div>
+                
+                
+        <div class="meta-card notes-box" style="margin-top: 15px; background: #fafafa; border: 1px dashed #dcdde1;">
+            <span class="meta-label">📝 备注 (Notes)</span>
+            <div class="editable-node" style="min-height: 40px; color: #555; outline: none;">在此输入备注...</div>
+        </div>
+        
+            </div>
+        </div>
+        
+        <div class="word-card">
+            <div class="word-header" onclick="toggleCard(4)" title="点击展开/折叠">
+                <div class="header-left">
+                    <span class="word-index">#5</span>
+                    <h2 class="word-title editable-node">harness</h2>
+                </div>
+                <div class="header-right" id="arrow-4">▼</div>
+            </div>
+            
+            <div id="content-4" class="word-content" style="display: none;">
+                <div class="definition-box">
+                    <div class="def-zh editable-node">v. 控制并利用；（把动物）拴在一起（或拴到某物上）；给（马）套上挽具；连接，串联；n. （马的）挽具，马具；系带，吊带；日常工作</div>
+                    <div class="def-en editable-node">A restraint or support, especially one consisting of a loop or network of rope or straps.</div>
+                </div>
+                
+                <div class="meta-card exp-box"><span class="meta-label">📚 讲解与辨析 (Explanation)</span><ul class="vertical-list exp-list"><li class='editable-node'>💡 <span class='trans-zh'>作为名词：根据其功能捆绑和布线的电线或电缆的集合。</span></li><li class='editable-node'>💡 <span class='trans-zh'>作为名词：完整的服装，特别是在军事意义上，一个人或一匹马的服装；铠甲一般。</span></li></ul></div>
+                
+                
+                <div class="meta-card collocations-box"><span class="meta-label">🔗 常见搭配 (Collocations)</span><ul class="vertical-list"><li class="editable-node"><span class="en-word">in harness</span> <span class="trans-zh">(一起合作；在日常工作中)</span></li><li class="editable-node"><span class="en-word">wiring harness</span> <span class="trans-zh">(线束)</span></li><li class="editable-node"><span class="en-word">wire harness</span> <span class="trans-zh">(线束；电子线束；配线)</span></li><li class="editable-node"><span class="en-word">die in harness</span> <span class="trans-zh">(工作时死去)</span></li><li class="editable-node"><span class="en-word">safety harness</span> <span class="trans-zh">(安全带；安全吊带；安全挂钩具)</span></li></ul></div>
+                
+            <div class="example-box">
+                <span class="meta-label">📰 真实语境 (In Context)</span>
+                <div class="sentence editable-node">"They harnessed the horse to the post."</div>
+                <div class="source editable-node">📖 Dictionary Example</div>
+            </div>
+            
+                
+        <div class="meta-card notes-box" style="margin-top: 15px; background: #fafafa; border: 1px dashed #dcdde1;">
+            <span class="meta-label">📝 备注 (Notes)</span>
+            <div class="editable-node" style="min-height: 40px; color: #555; outline: none;">在此输入备注...</div>
+        </div>
+        
+            </div>
+        </div>
+        
+    </div>
+    
+    <div id="gh-save-btn" onclick="saveToGitHub()">💾 保存到 GitHub</div>
+    
+    <script>
+        // GitHub API 配置区
+        const GH_OWNER = 'moodHappy'; 
+        const GH_REPO = 'DailyFiveWords';
+        const FILE_PATH = 'docs/2026/7/2026_7_1_0522.html'; 
+
+        // 展开折叠逻辑
+        function toggleCard(index) {
+            const content = document.getElementById('content-' + index);
+            const arrow = document.getElementById('arrow-' + index);
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                arrow.style.transform = 'rotate(180deg)';
+            } else {
+                content.style.display = 'none';
+                arrow.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        // 双指触摸切换编辑模式
+        let isEditing = false;
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                toggleEditMode();
+            }
+        }, {passive: false});
+
+        function toggleEditMode() {
+            isEditing = !isEditing;
+            const editables = document.querySelectorAll('.editable-node');
+            const btn = document.getElementById('gh-save-btn');
+            
+            if (isEditing) {
+                document.body.classList.add('editing');
+                editables.forEach(el => el.setAttribute('contenteditable', 'true'));
+                btn.style.display = 'block';
+                // 自动展开所有卡片方便编辑
+                document.querySelectorAll('.word-content').forEach(el => el.style.display = 'block');
+                document.querySelectorAll('.header-right').forEach(el => el.style.transform = 'rotate(180deg)');
+            } else {
+                document.body.classList.remove('editing');
+                editables.forEach(el => el.removeAttribute('contenteditable'));
+                btn.style.display = 'none';
+            }
+        }
+
+        // 提交修改到 GitHub
+        async function saveToGitHub() {
+            const token = localStorage.getItem('gh_token') || prompt('请输入您的 GitHub Personal Access Token (仅首次需要):');
+            if (!token) return;
+            localStorage.setItem('gh_token', token);
+
+            const btn = document.getElementById('gh-save-btn');
+            btn.innerText = '正在保存...';
+
+            try {
+                // 1. 清理编辑状态的 DOM 属性
+                document.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+                document.body.classList.remove('editing');
+                btn.style.display = 'none';
+
+                // 2. 获取文件的当前 SHA (更新文件必须提供)
+                const apiUrl = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${FILE_PATH}`;
+                const getRes = await fetch(apiUrl, {
+                    headers: { 'Authorization': `token ${token}` }
+                });
+                
+                let sha = '';
+                if (getRes.ok) {
+                    const fileData = await getRes.json();
+                    sha = fileData.sha;
+                }
+
+                // 3. 提取最新的完整 HTML 源码并 Base64 编码
+                const newHtml = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+                const encodedContent = btoa(unescape(encodeURIComponent(newHtml)));
+
+                // 4. 发起 PUT 请求提交更新
+                const putRes = await fetch(apiUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: `Update ${FILE_PATH} via Web Edit`,
+                        content: encodedContent,
+                        sha: sha || undefined
+                    })
+                });
+
+                if (putRes.ok) {
+                    alert('✅ 成功同步至 GitHub！');
+                } else {
+                    const err = await putRes.json();
+                    if (err.message.includes("Bad credentials")) {
+                        localStorage.removeItem('gh_token');
+                        alert('❌ Token 无效或已过期，请重新填写');
+                    } else {
+                        alert('❌ 保存失败: ' + err.message);
+                    }
+                }
+            } catch (e) {
+                alert('❌ 网络或请求错误: ' + e.message);
+            } finally {
+                // 恢复按钮状态
+                btn.style.display = isEditing ? 'block' : 'none';
+                btn.innerText = '💾 保存到 GitHub';
+                if (isEditing) toggleEditMode(); // 如果刚才处于编辑模式，则切回来以便继续
+            }
+        }
+    </script>
+</body>
+</html>

@@ -64,86 +64,172 @@
     </div>
 
     <script>
-        const archiveData = {"2026": {"7": {"7": [{"time": "23:16", "path": "2026/7/2026_7_7_2316.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}, {"time": "05:21", "path": "2026/7/2026_7_7_0521.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}], "6": [{"time": "04:47", "path": "2026/7/2026_7_6_0447.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}], "5": [{"time": "04:43", "path": "2026/7/2026_7_5_0443.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}], "4": [{"time": "04:53", "path": "2026/7/2026_7_4_0453.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}], "3": [{"time": "17:43", "path": "2026/7/2026_7_3_1743.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}, {"time": "04:54", "path": "2026/7/2026_7_3_0454.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}], "2": [{"time": "05:18", "path": "2026/7/2026_7_2_0518.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}], "1": [{"time": "05:22", "path": "2026/7/2026_7_1_0522.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}]}, "6": {"30": [{"time": "05:17", "path": "2026/6/2026_6_30_0517.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}], "29": [{"time": "04:52", "path": "2026/6/2026_6_29_0452.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}], "28": [{"time": "04:50", "path": "2026/6/2026_6_28_0450.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}], "27": [{"time": "22:27", "path": "2026/6/2026_6_27_2227.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}, {"time": "22:13", "path": "2026/6/2026_6_27_2213.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}]}}};
+        const archiveData = {"2026": {"7": {"8": [{"time": "01:00", "path": "2026/7/2026_7_8_0100.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}], "7": [{"time": "23:16", "path": "2026/7/2026_7_7_2316.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}, {"time": "05:21", "path": "2026/7/2026_7_7_0521.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}], "6": [{"time": "04:47", "path": "2026/7/2026_7_6_0447.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}], "5": [{"time": "04:43", "path": "2026/7/2026_7_5_0443.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}], "4": [{"time": "04:53", "path": "2026/7/2026_7_4_0453.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}], "3": [{"time": "17:43", "path": "2026/7/2026_7_3_1743.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}, {"time": "04:54", "path": "2026/7/2026_7_3_0454.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}], "2": [{"time": "05:18", "path": "2026/7/2026_7_2_0518.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}], "1": [{"time": "05:22", "path": "2026/7/2026_7_1_0522.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}]}, "6": {"30": [{"time": "05:17", "path": "2026/6/2026_6_30_0517.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}], "29": [{"time": "04:52", "path": "2026/6/2026_6_29_0452.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}], "28": [{"time": "04:50", "path": "2026/6/2026_6_28_0450.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}], "27": [{"time": "22:27", "path": "2026/6/2026_6_27_2227.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}, {"time": "22:13", "path": "2026/6/2026_6_27_2213.html", "title": "\ud83c\udfaf 5 \u8bcd\u8fde\u51fb\u4efb\u52a1"}]}}};
         const today = new Date();
-        let selectedYear = today.getFullYear();
-        let selectedMonth = today.getMonth() + 1;
-        let selectedDay = today.getDate();
+        
+        // ================= 1. 终极修复：单向状态机管控 =================
+        const AppState = {
+            year: today.getFullYear(),
+            month: today.getMonth() + 1,
+            day: today.getDate()
+        };
 
-        const yearSelect = document.getElementById('yearSelect');
-        const monthSelect = document.getElementById('monthSelect');
-        const daysGrid = document.getElementById('daysGrid');
-        const feedList = document.getElementById('feedList');
+        function ensureYearExists(y) {
+            const yearSelect = document.getElementById('yearSelect');
+            if (!Array.from(yearSelect.options).some(opt => parseInt(opt.value, 10) === y)) {
+                const opt = document.createElement('option');
+                opt.value = y; 
+                opt.textContent = y + ' 年';
+                yearSelect.appendChild(opt);
+                
+                // 重新排序保证最新年份在上方
+                const options = Array.from(yearSelect.options);
+                options.sort((a, b) => parseInt(b.value, 10) - parseInt(a.value, 10));
+                yearSelect.innerHTML = '';
+                options.forEach(o => yearSelect.appendChild(o));
+            }
+        }
 
         function initDropdowns() {
-            const currentYear = new Date().getFullYear();
-            const yearsSet = new Set(Object.keys(archiveData).map(Number));
+            const yearSelect = document.getElementById('yearSelect');
+            yearSelect.innerHTML = '';
             
-            // 确保包含未来十年
-            for (let i = 0; i <= 10; i++) {
-                yearsSet.add(currentYear + i);
+            const yearsSet = new Set(Object.keys(archiveData).map(Number));
+            for (let i = 0; i <= 50; i++) {
+                yearsSet.add(today.getFullYear() + i);
             }
             
             const years = Array.from(yearsSet).sort((a, b) => b - a);
             years.forEach(y => {
-                const opt = document.createElement('option'); opt.value = y; opt.textContent = y + ' 年';
+                const opt = document.createElement('option');
+                opt.value = y; 
+                opt.textContent = y + ' 年';
                 yearSelect.appendChild(opt);
             });
-            yearSelect.value = selectedYear; monthSelect.value = selectedMonth;
         }
 
-        function renderCalendar(year, month) {
+        // ================= 2. 暴力重绘引擎 (解决旧内容残留核心) =================
+        function forceRender() {
+            ensureYearExists(AppState.year);
+            
+            // 修正跨月导致的无效日期（防止31号残留到小月）
+            const maxDay = new Date(AppState.year, AppState.month, 0).getDate();
+            if (AppState.day > maxDay) AppState.day = maxDay;
+
+            // 强制同步下拉菜单 UI
+            document.getElementById('yearSelect').value = AppState.year;
+            document.getElementById('monthSelect').value = AppState.month;
+
+            const daysGrid = document.getElementById('daysGrid');
+            const feedList = document.getElementById('feedList');
+
+            // 彻底抹除旧节点，免疫原生 DOM 刷新失效的怪异问题
             daysGrid.innerHTML = '';
-            const firstDay = new Date(year, month - 1, 1).getDay();
-            const startDay = firstDay === 0 ? 7 : firstDay;
-            const daysInMonth = new Date(year, month, 0).getDate();
-            
-            for (let i = 1; i < startDay; i++) {
-                const empty = document.createElement('div'); empty.className = 'day-cell empty';
-                daysGrid.appendChild(empty);
-            }
-            
-            const monthData = (archiveData[year] && archiveData[year][month]) ? archiveData[year][month] : {};
-            
-            for (let day = 1; day <= daysInMonth; day++) {
-                const cell = document.createElement('div'); cell.className = 'day-cell'; cell.textContent = day;
-                const dot = document.createElement('div'); dot.className = 'dot'; cell.appendChild(dot);
-                
-                if (monthData[day] && monthData[day].length > 0) cell.classList.add('has-news'); else cell.classList.add('no-news');
-                if (year === today.getFullYear() && month === today.getMonth() + 1 && day === today.getDate()) cell.classList.add('today');
-                if (year === selectedYear && month === selectedMonth && day === selectedDay) cell.classList.add('selected');
-                
-                cell.addEventListener('click', () => {
-                    selectedYear = year; selectedMonth = month; selectedDay = day;
-                    renderCalendar(year, month); renderFeedList(year, month, day);
-                });
-                daysGrid.appendChild(cell);
-            }
-        }
-
-        function renderFeedList(year, month, day) {
             feedList.innerHTML = '';
-            const monthData = (archiveData[year] && archiveData[year][month]) ? archiveData[year][month] : null;
-            const dayData = monthData ? monthData[day] : null;
-            
-            if (dayData && dayData.length > 0) {
-                dayData.forEach(item => {
-                    const a = document.createElement('a'); a.href = item.path; a.className = 'feed-item';
-                    a.innerHTML = `<span class="feed-time">${item.time}</span><span class="feed-title">${item.title}</span> ➔`;
-                    feedList.appendChild(a);
-                });
-            } else {
+
+            try {
+                // 渲染日历网格
+                const firstDay = new Date(AppState.year, AppState.month - 1, 1).getDay();
+                const startDay = firstDay === 0 ? 7 : firstDay;
+                
+                for (let i = 1; i < startDay; i++) {
+                    const empty = document.createElement('div');
+                    empty.className = 'day-cell empty';
+                    daysGrid.appendChild(empty);
+                }
+                
+                let monthData = {};
+                if (archiveData[AppState.year] && archiveData[AppState.year][AppState.month]) {
+                    monthData = archiveData[AppState.year][AppState.month];
+                }
+                
+                for (let day = 1; day <= maxDay; day++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'day-cell';
+                    cell.textContent = day;
+                    
+                    const dot = document.createElement('div');
+                    dot.className = 'dot';
+                    cell.appendChild(dot);
+                    
+                    if (monthData[day] && monthData[day].length > 0) cell.classList.add('has-news');
+                    else cell.classList.add('no-news');
+                    
+                    if (AppState.year === today.getFullYear() && AppState.month === today.getMonth() + 1 && day === today.getDate()) cell.classList.add('today');
+                    if (day === AppState.day) cell.classList.add('selected');
+                    
+                    cell.onclick = () => {
+                        AppState.day = day;
+                        forceRender();
+                    };
+                    daysGrid.appendChild(cell);
+                }
+            } catch (err) { console.error("日历渲染异常:", err); }
+
+            try {
+                // 渲染学习记录列表（安全链式查找）
+                let dayData = null;
+                if (archiveData[AppState.year] && archiveData[AppState.year][AppState.month] && archiveData[AppState.year][AppState.month][AppState.day]) {
+                    dayData = archiveData[AppState.year][AppState.month][AppState.day];
+                }
+                
+                if (dayData && Array.isArray(dayData) && dayData.length > 0) {
+                    dayData.forEach(item => {
+                        const a = document.createElement('a');
+                        a.href = item.path;
+                        a.className = 'feed-item';
+                        a.innerHTML = `<span class="feed-time">${item.time}</span><span class="feed-title">${item.title}</span> ➔`;
+                        feedList.appendChild(a);
+                    });
+                } else {
+                    feedList.innerHTML = '<div class="empty-state">今日暂无学习记录</div>';
+                }
+            } catch (err) { 
+                console.error("内容列表渲染异常:", err); 
                 feedList.innerHTML = '<div class="empty-state">今日暂无学习记录</div>';
             }
         }
 
-        yearSelect.addEventListener('change', (e) => { selectedYear = parseInt(e.target.value); renderCalendar(selectedYear, selectedMonth); });
-        monthSelect.addEventListener('change', (e) => { selectedMonth = parseInt(e.target.value); renderCalendar(selectedYear, selectedMonth); });
-        document.getElementById('prevBtn').addEventListener('click', () => { selectedMonth--; if (selectedMonth < 1) { selectedMonth = 12; selectedYear--; yearSelect.value = selectedYear; } monthSelect.value = selectedMonth; renderCalendar(selectedYear, selectedMonth); });
-        document.getElementById('nextBtn').addEventListener('click', () => { selectedMonth++; if (selectedMonth > 12) { selectedMonth = 1; selectedYear++; yearSelect.value = selectedYear; } monthSelect.value = selectedMonth; renderCalendar(selectedYear, selectedMonth); });
-        document.getElementById('todayBtn').addEventListener('click', () => { selectedYear = today.getFullYear(); selectedMonth = today.getMonth() + 1; selectedDay = today.getDate(); yearSelect.value = selectedYear; monthSelect.value = selectedMonth; renderCalendar(selectedYear, selectedMonth); renderFeedList(selectedYear, selectedMonth, selectedDay); });
+        // ================= 3. 完全分离的事件绑定器 =================
+        document.getElementById('yearSelect').addEventListener('change', (e) => {
+            AppState.year = parseInt(e.target.value, 10);
+            forceRender();
+        });
+        
+        document.getElementById('monthSelect').addEventListener('change', (e) => {
+            AppState.month = parseInt(e.target.value, 10);
+            forceRender();
+        });
+        
+        document.getElementById('prevBtn').addEventListener('click', () => {
+            AppState.month--;
+            if (AppState.month < 1) { 
+                AppState.month = 12; 
+                AppState.year--; 
+            }
+            forceRender();
+        });
+        
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            AppState.month++;
+            if (AppState.month > 12) { 
+                AppState.month = 1; 
+                AppState.year++; 
+            }
+            forceRender();
+        });
+        
+        document.getElementById('todayBtn').addEventListener('click', () => {
+            AppState.year = today.getFullYear(); 
+            AppState.month = today.getMonth() + 1; 
+            AppState.day = today.getDate();
+            forceRender();
+        });
 
-        initDropdowns(); renderCalendar(selectedYear, selectedMonth); renderFeedList(selectedYear, selectedMonth, selectedDay);
+        // 首次启动注入
+        initDropdowns();
+        forceRender();
+
     </script>
 </body>
 </html>

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Daily Five Words | 2026-08-23</title>
+    <style>
+        :root { --bg: #f5f5f7; --card: #ffffff; --text: #1d1d1f; --muted: #86868b; --accent: #0066cc; --border: #e5e5ea; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+        .nav-back { padding: 15px; text-align: center; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 5px rgba(0,0,0,0.02); }
+        .nav-back a { text-decoration: none; color: white; background: var(--accent); padding: 8px 20px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; }
+        
+        .container { max-width: 600px; margin: 0 auto; padding: 20px 15px 50px 15px; box-sizing: border-box; }
+        .header { text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px dashed var(--border); }
+        .header h1 { margin: 0 0 5px 0; font-size: 1.8rem; color: #1a252f; }
+        .header p { margin: 0; color: var(--muted); font-size: 0.9rem; font-weight: bold; }
+        
+        .word-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 22px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); transition: all 0.2s ease; }
+        .word-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+        .header-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .header-right { font-size: 1.2rem; color: var(--muted); transition: transform 0.3s ease; }
+        
+        .word-index { background: var(--accent); color: #fff; padding: 2px 8px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; }
+        .word-title { font-size: 2.2rem; margin: 0; color: #d35400; text-transform: lowercase; font-family: Georgia, serif; }
+        
+        .word-content { margin-top: 18px; padding-top: 15px; border-top: 1px solid #f0f0f0; }
+        
+        .definition-box { background: #fdfbf7; border-left: 4px solid var(--accent); padding: 12px 15px; border-radius: 0 8px 8px 0; margin-bottom: 15px; }
+        .def-zh { font-size: 1.1rem; font-weight: bold; color: #2c3e50; margin-bottom: 5px; }
+        .def-en { font-size: 0.95rem; color: var(--muted); font-style: italic; }
+        
+        .meta-label { display: block; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+        
+        .grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .meta-card { background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #f0f0f0; margin-bottom: 15px; }
+        .collocations-box { background: #f0f7ff; border-color: #e1efff; }
+        .exp-box { background: #fffcf0; border-color: #fce8b2; }
+        
+        .img-box { padding: 0; overflow: hidden; display: flex; justify-content: center; background: #fafafa; border: none; }
+        .img-box img { max-width: 100%; height: auto; border-radius: 8px; }
+        
+        .vertical-list { list-style: none; padding: 0; margin: 0; }
+        .vertical-list li { margin-bottom: 6px; font-size: 0.95rem; line-height: 1.4; display: block; }
+        .vertical-list li:last-child { margin-bottom: 0; }
+        .exp-list li { color: #5c4d22; font-size: 0.9rem; }
+        .en-word { color: #2c3e50; font-weight: 600; font-family: Georgia, serif; font-size: 1.05rem; margin-right: 6px; }
+        .trans-zh { color: #7f8c8d; font-size: 0.85rem; }
+        
+        .example-box { border-top: 1px dashed var(--border); padding-top: 15px; margin-top: 15px; }
+        .sentence { font-size: 1.05rem; line-height: 1.6; color: var(--text); margin-bottom: 8px; font-family: Georgia, serif; }
+        .hl-word { color: var(--accent); font-weight: bold; text-decoration: underline; text-decoration-color: rgba(0,102,204,0.3); text-decoration-thickness: 3px; }
+        .source { font-size: 0.8rem; color: var(--muted); text-align: right; font-weight: bold; }
+        
+        /* 编辑模式样式 */
+        .editing .editable-node[contenteditable="true"] {
+            outline: 2px dashed var(--accent);
+            padding: 2px 4px;
+            background: rgba(0,102,204,0.05);
+            border-radius: 4px;
+            cursor: text;
+        }
+        
+        #gh-save-btn {
+            display: none; position: fixed; bottom: 20px; right: 20px;
+            background: #d35400; color: white; padding: 14px 24px;
+            border-radius: 30px; box-shadow: 0 4px 12px rgba(211,84,0,0.3);
+            z-index: 1000; font-weight: bold; font-size: 1rem;
+            cursor: pointer; transition: transform 0.2s;
+        }
+        #gh-save-btn:active { transform: scale(0.95); }
+        
+        @media (max-width: 500px) { .grid-layout { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="nav-back"><a href="../../index.html">🔙 返回学习日历</a></div>
+    <div class="container">
+        <div class="header">
+            <h1>Daily Five Words</h1>
+            <p>📝 2026-08-23 · 进阶词汇集训</p>
+        </div>
+        
+        <div class="word-card">
+            <div class="word-header" onclick="toggleCard(0)" title="点击展开/折叠">
+                <div class="header-left">
+                    <span class="word-index">#1</span>
+                    <h2 class="word-title editable-node">rumbling</h2>
+                </div>
+                <div class="header-right" id="arrow-0">▼</div>
+            </div>
+            
+            <div id="content-0" class="word-content" style="display: none;">
+                <div class="definition-box">
+                    <div class="def-zh editable-node">n. 隆隆声，辘辘声；怨声，传言；adj. 隆隆声的，辘辘声的；（争吵）无休止的；v. 隆隆作响；轰鸣着缓慢行进；低沉地说；（非正式）看穿（阴谋）；（非正式）打群架（rumble 的现在分词）</div>
+                    <div class="def-en editable-node">To make a low, heavy, continuous sound.</div>
+                </div>
+                
+                <div class="meta-card exp-box"><span class="meta-label">📚 讲解与辨析 (Explanation)</span><ul class="vertical-list exp-list"><li class='editable-node'>💡 <span class='trans-zh'>As verb: To discover deceitful or underhanded behaviour.</span></li><li class='editable-node'>💡 <span class='trans-zh'>As verb: To move while making a rumbling noise.</span></li></ul></div>
+                
+                
+                <div class="meta-card collocations-box"><span class="meta-label">🔗 常见搭配 (Collocations)</span><ul class="vertical-list"><li class="editable-node"><span class="en-word">volcanic rumbling</span> <span class="trans-zh">(火山雷鸣)</span></li><li class="editable-node"><span class="en-word">subterranean rumbling</span> <span class="trans-zh">(地震声)</span></li><li class="editable-node"><span class="en-word">rumbling murmur</span> <span class="trans-zh">(隆隆样杂音)</span></li><li class="editable-node"><span class="en-word">Thunder rumbling</span> <span class="trans-zh">(雷声隆隆)</span></li><li class="editable-node"><span class="en-word">Rumbling Footsteps</span> <span class="trans-zh">(脚步声阵阵)</span></li></ul></div>
+                
+            <div class="example-box">
+                <span class="meta-label">📰 真实语境 (In Context)</span>
+                <div class="sentence editable-node">"I could hear the thunder <span class='hl-word'>rumbling</span> in the distance."</div>
+                <div class="source editable-node">📖 Dictionary Example</div>
+            </div>
+            
+                
+        <div class="meta-card notes-box" style="margin-top: 15px; background: #fafafa; border: 1px dashed #dcdde1;">
+            <span class="meta-label">📝 备注 (Notes)</span>
+            <div class="editable-node" style="min-height: 40px; color: #555; outline: none;">在此输入备注...</div>
+        </div>
+        
+            </div>
+        </div>
+        
+        <div class="word-card">
+            <div class="word-header" onclick="toggleCard(1)" title="点击展开/折叠">
+                <div class="header-left">
+                    <span class="word-index">#2</span>
+                    <h2 class="word-title editable-node">drawn</h2>
+                </div>
+                <div class="header-right" id="arrow-1">▼</div>
+            </div>
+            
+            <div id="content-1" class="word-content" style="display: none;">
+                <div class="definition-box">
+                    <div class="def-zh editable-node">adj. （因身体不适、疲倦或忧虑）憔悴的，苍白的；v. 画，绘制；拖，拉；拔出；排出（液体）（draw 的过去分词）</div>
+                    <div class="def-en editable-node">To move or develop something.</div>
+                </div>
+                
+                <div class="meta-card exp-box"><span class="meta-label">📚 讲解与辨析 (Explanation)</span><ul class="vertical-list exp-list"><li class='editable-node'>💡 <span class='trans-zh'>As verb: To exert or experience force.</span></li><li class='editable-node'>💡 <span class='trans-zh'>As verb: (fluidic) To remove or separate or displace.</span></li></ul></div>
+                
+                
+                <div class="meta-card collocations-box"><span class="meta-label">🔗 常见搭配 (Collocations)</span><ul class="vertical-list"><li class="editable-node"><span class="en-word">drawn by</span> <span class="trans-zh">(绘图)</span></li><li class="editable-node"><span class="en-word">drawn on</span> <span class="trans-zh">(v. 以（某人）为付款人；硬背装订)</span></li><li class="editable-node"><span class="en-word">drawn out</span> <span class="trans-zh">(抽出，拉长)</span></li><li class="editable-node"><span class="en-word">drawn under</span> <span class="trans-zh">(出票依据；出票条款；在…开立)</span></li><li class="editable-node"><span class="en-word">cold drawn</span> <span class="trans-zh">(冷拉；冷拔)</span></li></ul></div>
+                
+            <div class="example-box">
+                <span class="meta-label">📰 真实语境 (In Context)</span>
+                <div class="sentence editable-node">"She had to draw upon her experience to solve the problem."</div>
+                <div class="source editable-node">📖 Dictionary Example</div>
+            </div>
+            
+                
+        <div class="meta-card notes-box" style="margin-top: 15px; background: #fafafa; border: 1px dashed #dcdde1;">
+            <span class="meta-label">📝 备注 (Notes)</span>
+            <div class="editable-node" style="min-height: 40px; color: #555; outline: none;">在此输入备注...</div>
+        </div>
+        
+            </div>
+        </div>
+        
+        <div class="word-card">
+            <div class="word-header" onclick="toggleCard(2)" title="点击展开/折叠">
+                <div class="header-left">
+                    <span class="word-index">#3</span>
+                    <h2 class="word-title editable-node">granddaughter</h2>
+                </div>
+                <div class="header-right" id="arrow-2">▼</div>
+            </div>
+            
+            <div id="content-2" class="word-content" style="display: none;">
+                <div class="definition-box">
+                    <div class="def-zh editable-node">n. 孙女；外孙女</div>
+                    <div class="def-en editable-node">The daughter of someone's child.</div>
+                </div>
+                
+                <div class="meta-card exp-box"><span class="meta-label">📚 讲解与辨析 (Explanation)</span><ul class="vertical-list exp-list"><li class='editable-node'>💡 <span class='trans-zh'>该词含义较单一，多在固定搭配中直接使用。</span></li></ul></div>
+                
+                <div class="grid-layout"><div class="meta-card"><span class="meta-label">近义词 (Synonyms)</span><ul class="vertical-list"><li class="editable-node"><span class="en-word">grandgirl</span> <span class="trans-zh">(孙女)</span></li></ul></div><div class="meta-card"><span class="meta-label">反义词 (Antonyms)</span><ul class="vertical-list"><li class="editable-node"><span class="en-word">grandmother</span> <span class="trans-zh">(祖母)</span></li><li class="editable-node"><span class="en-word">grandfather</span> <span class="trans-zh">(祖父)</span></li></ul></div></div>
+                <div class="meta-card collocations-box"><span class="meta-label">🔗 常见搭配 (Collocations)</span><ul class="vertical-list"><li class="editable-node"><span class="en-word">great-granddaughter</span> <span class="trans-zh">(曾孙女)</span></li><li class="editable-node"><span class="en-word">Granddaughter or grandson</span> <span class="trans-zh">(孙子孙女或外孙外孙女)</span></li><li class="editable-node"><span class="en-word">I am Rosemary's granddaughter</span> <span class="trans-zh">(我是罗丝玛丽的孙女)</span></li><li class="editable-node"><span class="en-word">granddaughter nuclide</span> <span class="trans-zh">(孙体核素)</span></li><li class="editable-node"><span class="en-word">granddaughter design</span> <span class="trans-zh">(孙女设计)</span></li></ul></div>
+                
+                
+        <div class="meta-card notes-box" style="margin-top: 15px; background: #fafafa; border: 1px dashed #dcdde1;">
+            <span class="meta-label">📝 备注 (Notes)</span>
+            <div class="editable-node" style="min-height: 40px; color: #555; outline: none;">在此输入备注...</div>
+        </div>
+        
+            </div>
+        </div>
+        
+        <div class="word-card">
+            <div class="word-header" onclick="toggleCard(3)" title="点击展开/折叠">
+                <div class="header-left">
+                    <span class="word-index">#4</span>
+                    <h2 class="word-title editable-node">healer</h2>
+                </div>
+                <div class="header-right" id="arrow-3">▼</div>
+            </div>
+            
+            <div id="content-3" class="word-content" style="display: none;">
+                <div class="definition-box">
+                    <div class="def-zh editable-node">n. 用自然力治疗别人者；缓解情势的事物，抚平创伤的事物</div>
+                    <div class="def-en editable-node">暂无英文释义</div>
+                </div>
+                
+                <div class="meta-card exp-box"><span class="meta-label">📚 讲解与辨析 (Explanation)</span><ul class="vertical-list exp-list"><li class='editable-node'>💡 <span class='trans-zh'>该词含义较单一，多在固定搭配中直接使用。</span></li></ul></div>
+                
+                
+                <div class="meta-card collocations-box"><span class="meta-label">🔗 常见搭配 (Collocations)</span><ul class="vertical-list"><li class="editable-node"><span class="en-word">Spirit Healer</span> <span class="trans-zh">(灵魂医者)</span></li><li class="editable-node"><span class="en-word">Sailor Star Healer</span> <span class="trans-zh">(夜天光)</span></li><li class="editable-node"><span class="en-word">Healer of Hearts</span> <span class="trans-zh">(心灵深处)</span></li><li class="editable-node"><span class="en-word">Master Healer</span> <span class="trans-zh">(疗疾神医)</span></li><li class="editable-node"><span class="en-word">Earth Healer</span> <span class="trans-zh">(地球医生)</span></li></ul></div>
+                
+                
+        <div class="meta-card notes-box" style="margin-top: 15px; background: #fafafa; border: 1px dashed #dcdde1;">
+            <span class="meta-label">📝 备注 (Notes)</span>
+            <div class="editable-node" style="min-height: 40px; color: #555; outline: none;">在此输入备注...</div>
+        </div>
+        
+            </div>
+        </div>
+        
+        <div class="word-card">
+            <div class="word-header" onclick="toggleCard(4)" title="点击展开/折叠">
+                <div class="header-left">
+                    <span class="word-index">#5</span>
+                    <h2 class="word-title editable-node">pellet</h2>
+                </div>
+                <div class="header-right" id="arrow-4">▼</div>
+            </div>
+            
+            <div id="content-4" class="word-content" style="display: none;">
+                <div class="definition-box">
+                    <div class="def-zh editable-node">n. 小球；（军）小子弹（枪用）；（生科）沉淀物；vt. 将……制成丸状；用子弹打；用小球扔；【名】（Pellet）（西）佩列特；（法）佩莱；（德）佩勒特</div>
+                    <div class="def-en editable-node">A small, compressed, hard chunk of matter.</div>
+                </div>
+                
+                <div class="meta-card exp-box"><span class="meta-label">📚 讲解与辨析 (Explanation)</span><ul class="vertical-list exp-list"><li class='editable-node'>💡 <span class='trans-zh'>作为名词：用作线膛气枪弹药的铅弹。</span></li><li class='editable-node'>💡 <span class='trans-zh'>作为名词：猫头鹰反胃消化的压缩副产品。作为食物中不可消化部分（例如毛皮和骨头）的废物处理机制。</span></li></ul></div>
+                
+                <div class="grid-layout"><div class="meta-card"><span class="meta-label">近义词 (Synonyms)</span><ul class="vertical-list"><li class="editable-node"><span class="en-word">pelletize</span> <span class="trans-zh">(造粒)</span></li></ul></div></div>
+                <div class="meta-card collocations-box"><span class="meta-label">🔗 常见搭配 (Collocations)</span><ul class="vertical-list"><li class="editable-node"><span class="en-word">pellet fuel</span> <span class="trans-zh">(球丸燃料)</span></li><li class="editable-node"><span class="en-word">pellet mill</span> <span class="trans-zh">(制粒设备；制片机；制丸磨；饲料压粒机)</span></li></ul></div>
+                
+            <div class="example-box">
+                <span class="meta-label">📰 真实语境 (In Context)</span>
+                <div class="sentence editable-node">"a <span class='hl-word'>pellet</span> of wood, paper, or ore"</div>
+                <div class="source editable-node">📖 Dictionary Example</div>
+            </div>
+            
+                
+        <div class="meta-card notes-box" style="margin-top: 15px; background: #fafafa; border: 1px dashed #dcdde1;">
+            <span class="meta-label">📝 备注 (Notes)</span>
+            <div class="editable-node" style="min-height: 40px; color: #555; outline: none;">在此输入备注...</div>
+        </div>
+        
+            </div>
+        </div>
+        
+    </div>
+    
+    <div id="gh-save-btn" onclick="saveToGitHub()">💾 保存到 GitHub</div>
+    
+    <script>
+        // GitHub API 配置区
+        const GH_OWNER = 'moodHappy'; 
+        const GH_REPO = 'DailyFiveWords';
+        const FILE_PATH = 'docs/2026/8/2026_8_23_0411.html'; 
+
+        // 展开折叠逻辑
+        function toggleCard(index) {
+            const content = document.getElementById('content-' + index);
+            const arrow = document.getElementById('arrow-' + index);
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                arrow.style.transform = 'rotate(180deg)';
+            } else {
+                content.style.display = 'none';
+                arrow.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        // 双指触摸切换编辑模式
+        let isEditing = false;
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                toggleEditMode();
+            }
+        }, {passive: false});
+
+        function toggleEditMode() {
+            isEditing = !isEditing;
+            const editables = document.querySelectorAll('.editable-node');
+            const btn = document.getElementById('gh-save-btn');
+            
+            if (isEditing) {
+                document.body.classList.add('editing');
+                editables.forEach(el => el.setAttribute('contenteditable', 'true'));
+                btn.style.display = 'block';
+                // 自动展开所有卡片方便编辑
+                document.querySelectorAll('.word-content').forEach(el => el.style.display = 'block');
+                document.querySelectorAll('.header-right').forEach(el => el.style.transform = 'rotate(180deg)');
+            } else {
+                document.body.classList.remove('editing');
+                editables.forEach(el => el.removeAttribute('contenteditable'));
+                btn.style.display = 'none';
+            }
+        }
+
+        // 提交修改到 GitHub
+        async function saveToGitHub() {
+            const token = localStorage.getItem('gh_token') || prompt('请输入您的 GitHub Personal Access Token (仅首次需要):');
+            if (!token) return;
+            localStorage.setItem('gh_token', token);
+
+            const btn = document.getElementById('gh-save-btn');
+            btn.innerText = '正在保存...';
+
+            try {
+                // 1. 清理编辑状态的 DOM 属性
+                document.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+                document.body.classList.remove('editing');
+                btn.style.display = 'none';
+
+                // 2. 获取文件的当前 SHA (更新文件必须提供)
+                const apiUrl = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${FILE_PATH}`;
+                const getRes = await fetch(apiUrl, {
+                    headers: { 'Authorization': `token ${token}` }
+                });
+                
+                let sha = '';
+                if (getRes.ok) {
+                    const fileData = await getRes.json();
+                    sha = fileData.sha;
+                }
+
+                // 3. 提取最新的完整 HTML 源码并 Base64 编码
+                const newHtml = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+                const encodedContent = btoa(unescape(encodeURIComponent(newHtml)));
+
+                // 4. 发起 PUT 请求提交更新
+                const putRes = await fetch(apiUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: `Update ${FILE_PATH} via Web Edit`,
+                        content: encodedContent,
+                        sha: sha || undefined
+                    })
+                });
+
+                if (putRes.ok) {
+                    alert('✅ 成功同步至 GitHub！');
+                } else {
+                    const err = await putRes.json();
+                    if (err.message.includes("Bad credentials")) {
+                        localStorage.removeItem('gh_token');
+                        alert('❌ Token 无效或已过期，请重新填写');
+                    } else {
+                        alert('❌ 保存失败: ' + err.message);
+                    }
+                }
+            } catch (e) {
+                alert('❌ 网络或请求错误: ' + e.message);
+            } finally {
+                // 恢复按钮状态
+                btn.style.display = isEditing ? 'block' : 'none';
+                btn.innerText = '💾 保存到 GitHub';
+                if (isEditing) toggleEditMode(); // 如果刚才处于编辑模式，则切回来以便继续
+            }
+        }
+    </script>
+</body>
+</html>

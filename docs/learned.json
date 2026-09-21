@@ -454,6 +454,11 @@
     "clamour",
     "commodore",
     "paratrooper",
-    "disappearance"
+    "disappearance",
+    "validate",
+    "lifeboat",
+    "BS",
+    "ambiguous",
+    "thump"
   ]
 }
